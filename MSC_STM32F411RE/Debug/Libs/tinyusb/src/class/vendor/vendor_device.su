@@ -1,0 +1,17 @@
+../Libs/tinyusb/src/class/vendor/vendor_device.c:82:19:tud_vendor_rx_cb	24	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:88:19:tud_vendor_tx_cb	16	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:97:6:tud_vendor_n_mounted	24	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:107:10:tud_vendor_n_available	40	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:113:6:tud_vendor_n_peek	32	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:119:10:tud_vendor_n_read	32	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:125:10:tud_vendor_n_read_discard	32	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:131:6:tud_vendor_n_read_flush	24	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:151:10:tud_vendor_n_write	32	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:158:10:tud_vendor_n_write_flush	24	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:164:10:tud_vendor_n_write_available	24	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:174:6:vendord_init	48	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:213:6:vendord_deinit	16	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:222:6:vendord_reset	40	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:238:16:find_vendor_itf	24	static
+../Libs/tinyusb/src/class/vendor/vendor_device.c:255:10:vendord_open	128	static,ignoring_inline_asm
+../Libs/tinyusb/src/class/vendor/vendor_device.c:299:6:vendord_xfer_cb	48	static

@@ -12,8 +12,11 @@ Libs/tinyusb/src/tusb.o: ../Libs/tinyusb/src/tusb.c \
  C:/Users/jonwo/STM32CubeIDE/workspace_1.19.0/MSC_STM32F411RE/Libs/tinyusb/src/common/tusb_fifo.h \
  C:/Users/jonwo/STM32CubeIDE/workspace_1.19.0/MSC_STM32F411RE/Libs/tinyusb/src/osal/osal.h \
  ../Libs/tinyusb/src/common/tusb_fifo.h ../Libs/tinyusb/src/device/usbd.h \
+ ../Libs/tinyusb/src/class/hid/hid_device.h \
+ ../Libs/tinyusb/src/class/hid/hid.h \
  ../Libs/tinyusb/src/class/msc/msc_device.h \
  ../Libs/tinyusb/src/class/msc/msc.h \
+ ../Libs/tinyusb/src/class/vendor/vendor_device.h \
  ../Libs/tinyusb/src/common/tusb_private.h \
  ../Libs/tinyusb/src/device/usbd_pvt.h \
  C:/Users/jonwo/STM32CubeIDE/workspace_1.19.0/MSC_STM32F411RE/Libs/tinyusb/src/common/tusb_private.h
@@ -34,8 +37,11 @@ C:/Users/jonwo/STM32CubeIDE/workspace_1.19.0/MSC_STM32F411RE/Libs/tinyusb/src/co
 C:/Users/jonwo/STM32CubeIDE/workspace_1.19.0/MSC_STM32F411RE/Libs/tinyusb/src/osal/osal.h:
 ../Libs/tinyusb/src/common/tusb_fifo.h:
 ../Libs/tinyusb/src/device/usbd.h:
+../Libs/tinyusb/src/class/hid/hid_device.h:
+../Libs/tinyusb/src/class/hid/hid.h:
 ../Libs/tinyusb/src/class/msc/msc_device.h:
 ../Libs/tinyusb/src/class/msc/msc.h:
+../Libs/tinyusb/src/class/vendor/vendor_device.h:
 ../Libs/tinyusb/src/common/tusb_private.h:
 ../Libs/tinyusb/src/device/usbd_pvt.h:
 C:/Users/jonwo/STM32CubeIDE/workspace_1.19.0/MSC_STM32F411RE/Libs/tinyusb/src/common/tusb_private.h:

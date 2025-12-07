@@ -28,12 +28,15 @@
 // 4. 기능 활성화 (MSC 켜기!)
 #define CFG_TUD_CDC               0   // 시리얼 끄기
 #define CFG_TUD_MSC               1   // 저장장치 켜기
-#define CFG_TUD_HID               0
+#define CFG_TUD_HID               1
 #define CFG_TUD_MIDI              0
-#define CFG_TUD_VENDOR            0
+#define CFG_TUD_VENDOR            1
 
 // 5. MSC 버퍼 설정
 #define CFG_TUD_MSC_EP_BUFSIZE    512
+#define CFG_TUD_HID_EP_BUFSIZE    16
+#define CFG_TUD_VENDOR_RX_BUFSIZE 64
+#define CFG_TUD_VENDOR_TX_BUFSIZE 64
 
 #ifdef __cplusplus
  }

@@ -1,0 +1,17 @@
+../Libs/tinyusb/src/class/vendor/vendor_device.c:82:19:tud_vendor_rx_cb	1
+../Libs/tinyusb/src/class/vendor/vendor_device.c:88:19:tud_vendor_tx_cb	1
+../Libs/tinyusb/src/class/vendor/vendor_device.c:97:6:tud_vendor_n_mounted	4
+../Libs/tinyusb/src/class/vendor/vendor_device.c:107:10:tud_vendor_n_available	3
+../Libs/tinyusb/src/class/vendor/vendor_device.c:113:6:tud_vendor_n_peek	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:119:10:tud_vendor_n_read	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:125:10:tud_vendor_n_read_discard	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:131:6:tud_vendor_n_read_flush	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:151:10:tud_vendor_n_write	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:158:10:tud_vendor_n_write_flush	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:164:10:tud_vendor_n_write_available	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:174:6:vendord_init	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:213:6:vendord_deinit	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:222:6:vendord_reset	2
+../Libs/tinyusb/src/class/vendor/vendor_device.c:238:16:find_vendor_itf	7
+../Libs/tinyusb/src/class/vendor/vendor_device.c:255:10:vendord_open	16
+../Libs/tinyusb/src/class/vendor/vendor_device.c:299:6:vendord_xfer_cb	7
