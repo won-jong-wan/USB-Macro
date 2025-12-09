@@ -1,0 +1,1 @@
+savedcmd_/home/ubuntu/USB_dr/dev.ko := arm-linux-gnueabihf-ld -r -EL -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/ubuntu/USB_dr/dev.ko /home/ubuntu/USB_dr/dev.o /home/ubuntu/USB_dr/dev.mod.o /home/ubuntu/USB_dr/.module-common.o
