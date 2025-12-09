@@ -137,21 +137,58 @@ void hid_task(void)
   }
 }
 
+// Vendor 데이터 수신 콜백
 void tud_vendor_rx_cb(uint8_t itf, uint8_t const* buffer, uint32_t bufsize)
 {
-  (void) itf; // 인터페이스 번호 (2번일 것임)
+  (void) itf;    // 사용 안 함
+  (void) buffer; // [중요] 매개변수 무시! (믿지 않음)
+  (void) bufsize;// [중요] 매개변수 무시! (믿지 않음)
 
-  // 받은 데이터가 있다면
-  if ( bufsize > 0 )
+  // 1. TinyUSB 내부에 진짜 쌓여있는 데이터 양을 확인
+  uint32_t available = tud_vendor_available();
+
+  // 2. 데이터가 진짜 있다면?
+  if ( available > 0 )
   {
-    // [Echo 기능]
-    // 받은 데이터(buffer)를 그대로 다시 PC로 쏩니다.
-    tud_vendor_write(buffer, bufsize);
+    uint8_t my_buffer[64]; // 우리가 직접 마련한 그릇
 
-    // (선택) LED 깜빡임으로 수신 확인
-    // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    // 3. 수동으로 읽어오기 (여기서 FIFO를 비웁니다)
+    // 읽어온 바이트 수를 리턴받음
+    uint32_t count = tud_vendor_read(my_buffer, sizeof(my_buffer));
+
+    // 읽어온 만큼만 처리
+    if (count > 0)
+    {
+       // [디버깅] LED 토글 (데이터 진짜 읽음!)
+       HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+       // 4. Echo Back (받은 거 그대로 돌려주기)
+       tud_vendor_write(my_buffer, count);
+
+       // 5. [필수] 즉시 전송 명령 (Flush)
+       tud_vendor_write_flush();
+    }
   }
 }
+
+//void vendor_task(void)
+//{
+//  static uint32_t start_ms = 0;
+//
+//  // 1초마다 실행
+//  if (HAL_GetTick() - start_ms < 1000) return;
+//  start_ms += 1000;
+//
+//  if (tud_mounted())
+//  {
+//    char *msg = "1234\n";
+//    // 1초마다 "Alive"라는 메시지를 강제로 큐에 넣음
+//    tud_vendor_write(msg, 5);
+//
+//    // 강제로 플러시(Flush) 시도 - 버퍼에 있는 걸 즉시 하드웨어로 밀어내기
+//    tud_vendor_write_flush();
+//  }
+//}
 /* USER CODE END 0 */
 
 /**
@@ -188,6 +225,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
   init_disk_data();
   tusb_init();
+
+  for(int i=0; i<3; i++) {
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); // 핀 번호 확인!
+        HAL_Delay(200);
+    }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -195,8 +237,9 @@ int main(void)
   while (1)
   {
 	  tud_task();
+//	  vendor_task();
 //	  hid_task();
-	  check_usb_file_command();
+//	  check_usb_file_command();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

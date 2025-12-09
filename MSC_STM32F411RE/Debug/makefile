@@ -110,8 +110,8 @@ all: main-build
 main-build: MSC_STM32F411RE.elf secondary-outputs
 
 # Tool invocations
-MSC_STM32F411RE.elf MSC_STM32F411RE.map: $(OBJS) $(USER_OBJS) C:\Users\jonwo\STM32CubeIDE\workspace_1.19.0\MSC_STM32F411RE\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "MSC_STM32F411RE.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\jonwo\STM32CubeIDE\workspace_1.19.0\MSC_STM32F411RE\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MSC_STM32F411RE.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+MSC_STM32F411RE.elf MSC_STM32F411RE.map: $(OBJS) $(USER_OBJS) C:\Users\kccistc\Desktop\USB-Macro\MSC_STM32F411RE\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "MSC_STM32F411RE.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\kccistc\Desktop\USB-Macro\MSC_STM32F411RE\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MSC_STM32F411RE.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

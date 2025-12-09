@@ -35,8 +35,8 @@
 // 5. MSC 버퍼 설정
 #define CFG_TUD_MSC_EP_BUFSIZE    512
 #define CFG_TUD_HID_EP_BUFSIZE    16
-#define CFG_TUD_VENDOR_RX_BUFSIZE 64
-#define CFG_TUD_VENDOR_TX_BUFSIZE 64
+#define CFG_TUD_VENDOR_RX_BUFSIZE 512
+#define CFG_TUD_VENDOR_TX_BUFSIZE 512
 
 #ifdef __cplusplus
  }

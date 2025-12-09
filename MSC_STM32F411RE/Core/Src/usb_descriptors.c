@@ -56,11 +56,11 @@ enum {
 #define EPNUM_MSC_IN      0x81
 
 // HID (Interface 1) : EP 2번 사용
-#define EPNUM_HID         0x82
+#define EPNUM_HID         0x83
 
 // VENDOR (Interface 2) : EP 3번 사용
-#define EPNUM_VENDOR_OUT  0x03
-#define EPNUM_VENDOR_IN   0x83
+#define EPNUM_VENDOR_OUT  0x02
+#define EPNUM_VENDOR_IN   0x82
 
 uint8_t const desc_configuration[] =
 {
