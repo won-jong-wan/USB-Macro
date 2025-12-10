@@ -8,7 +8,7 @@
 #ifndef INC_MSC_H_
 #define INC_MSC_H_
 
-#define DISK_BLOCK_NUM   32
+#define DISK_BLOCK_NUM   128
 #define DISK_BLOCK_SIZE  512
 #include "main.h"
 

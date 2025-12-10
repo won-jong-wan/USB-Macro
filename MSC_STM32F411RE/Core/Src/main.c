@@ -239,7 +239,7 @@ int main(void)
 	  tud_task();
 //	  vendor_task();
 //	  hid_task();
-//	  check_usb_file_command();
+	  check_usb_file_command();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
