@@ -34,9 +34,9 @@ void init_disk_data(void)
     0x01,                         // Sectors per Cluster (1)
     0x01, 0x00,                   // Reserved Sectors (1 -> LBA 0)
     0x02,                         // Number of FATs (2)
-    0x10, 0x00,                   // Root Dir Entries (16 -> 16*32 = 512 bytes = 1 sector)
-    (uint8_t)(DISK_BLOCK_NUM & 0xFF), (uint8_t)(DISK_BLOCK_NUM >> 8), // Total Sectors (Small)
-    0xF8,                         // Media Descriptor (0xF8: HDD/Generic) <--- [중요]
+	0x10, 0x00,  // Root entries
+	(uint8_t)(DISK_BLOCK_NUM & 0xFF), (uint8_t)(DISK_BLOCK_NUM >> 8), // <-- 여기가 매크로인지 확인!
+	0xF8,
     0x01, 0x00,                   // Sectors per FAT (1)
     0x01, 0x00,                   // Sectors per Track
     0x01, 0x00,                   // Number of Heads
@@ -102,42 +102,62 @@ void init_disk_data(void)
   memcpy(msc_disk[4], DEFAULT_FILE_CONTENT, strlen(DEFAULT_FILE_CONTENT));
 }
 
-// LBA 4번(Cluster 2)이 CONFIG.TXT의 시작 위치임을 우리는 알고 있습니다.
-// 복잡한 파일 시스템 파싱 없이, 그냥 배열 주소로 접근하면 됩니다.
-
-void check_usb_file_command(void)
+void check_usb_file_smart(void)
 {
-  // 디스크 전체 블록을 뒤집니다 (0, 1, 2번은 시스템 영역이니 3번부터)
-  for (int i = 3; i < DISK_BLOCK_NUM; i++)
-  {
-    char* sector_data = (char*)msc_disk[i];
-
-    // 해당 섹터에 "MODE=" 라는 글자가 있는지 확인
-    if (strstr(sector_data, "MODE=LINUX") != NULL)
+    // 1. 루트 디렉토리 영역 탐색 (LBA 3 ~ 18)
+    for (int lba = ROOT_DIR_LBA; lba < ROOT_DIR_LBA + MAX_ROOT_SECTORS; lba++)
     {
-      // [찾았다!]
+        uint8_t* sector = msc_disk[lba]; // 해당 섹터 포인터
 
-      // 1. 반응 (LED)
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET); // LED 켜기
+        // 한 섹터(512B) 안에 디렉토리 엔트리(32B)가 16개 들어있음
+        for (int i = 0; i < 512; i += 32)
+        {
+            fat_dir_entry_t* entry = (fat_dir_entry_t*) &sector[i];
 
-      // 2. (선택) 찾은 위치 디버깅용으로 출력하고 싶다면 Vendor interface로 쏠 수 있음
-      // char msg[32];
-      // sprintf(msg, "Found at LBA %d\n", i);
-      // tud_vendor_write(msg, strlen(msg));
-      // tud_vendor_write_flush();
+            // 2. 파일 이름 비교
+            // FAT 파일 시스템은 이름(8) + 확장자(3) 형태로 저장됨. (공백으로 채워짐)
+            // "CONFIG.TXT" -> "CONFIG  TXT"
 
-      // 한 번 찾으면 루프 종료 (중복 실행 방지)
-      return;
+            // 첫 글자가 0x00이면 더 이상 파일 없음 (탐색 종료)
+            if (entry->name[0] == 0x00) return;
+            // 첫 글자가 0xE5이면 삭제된 파일 (건너뜀)
+            if (entry->name[0] == 0xE5) continue;
+
+            // 이름 "CONFIG  " 와 확장자 "TXT" 확인
+            if (memcmp(entry->name, "CONFIG  ", 8) == 0 &&
+                memcmp(entry->ext,  "TXT", 3) == 0)
+            {
+                // [찾았다!]
+
+                // 3. 데이터 위치 계산
+                // 클러스터 번호를 LBA로 변환
+                // 공식: LBA = Data_Start + (Cluster - 2) * SectorsPerCluster
+                // (우리는 SectorsPerCluster = 1로 설정했음)
+                uint16_t cluster = entry->start_cluster;
+                uint32_t target_lba = DATA_START_LBA + (cluster - 2);
+
+                // 범위 체크 (안전장치)
+                if (target_lba >= DISK_BLOCK_NUM) return;
+
+                // 4. 내용 읽기
+                char* file_content = (char*) msc_disk[target_lba];
+
+                // 내용 확인 및 동작
+                if (strstr(file_content, "MODE=LINUX") != NULL)
+                {
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET); // LED ON
+                }
+                else if (strstr(file_content, "MODE=WINDOW") != NULL)
+                {
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // LED OFF
+                }
+
+                // 파일을 찾았으니 더 이상 탐색 불필요
+                return;
+            }
+        }
     }
-    else if (strstr(sector_data, "MODE=TURBO") != NULL)
-    {
-       // 다른 모드 동작...
-       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // LED 끄기
-       return;
-    }
-  }
 }
-
 // ---------------------------------------------------------
 // TinyUSB Callbacks
 // ---------------------------------------------------------
@@ -198,9 +218,49 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* 
   return bufsize;
 }
 
-// SCSI
 int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize)
 {
-  (void) lun; (void) scsi_cmd; (void) buffer; (void) bufsize;
-  return -1;
+  void const* response = NULL;
+  int32_t resplen = 0;
+
+  // 명령어 종류에 따라 처리
+  switch ( scsi_cmd[0] )
+  {
+    // [중요] 리눅스가 장치 잠금/해제 시도할 때 OK 해줘야 함
+    case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
+      // 그냥 성공(0) 했다고 거짓말하면 됨
+      return 0;
+
+    // [중요] 리눅스는 MODE_SENSE_6 (0x1A)를 자주 씀
+    case SCSI_CMD_MODE_SENSE_6:
+    {
+      // "쓰기 금지(Write Protect) 아님" 이라고 알려주는 헤더
+      static uint8_t const mode_sense_data[4] = { 0x03, 0x00, 0x00, 0x00 };
+      response = mode_sense_data;
+      resplen  = 4;
+      break;
+    }
+
+    // 윈도우가 쓰는 MODE_SENSE_10 (0x5A)
+    case SCSI_CMD_MODE_SENSE_10:
+    {
+      static uint8_t const mode_sense_data[8] = { 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+      response = mode_sense_data;
+      resplen  = 8;
+      break;
+    }
+
+    // 그 외 모르는 명령어는 거부 (-1)
+    default:
+      return -1;
+  }
+
+  // 응답 데이터 복사 (버퍼 오버플로우 방지)
+  if ( response && resplen > 0 )
+  {
+    if ( resplen > bufsize ) resplen = bufsize;
+    memcpy(buffer, response, resplen);
+  }
+
+  return resplen;
 }
