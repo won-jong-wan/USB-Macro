@@ -47,6 +47,8 @@
 TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
@@ -57,6 +59,7 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_TIM11_Init(void);
@@ -81,8 +84,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	is_ready = false;
 
 	if(g_is_emergency_mode){
+		// emergency -> normal
 		__HAL_TIM_SET_AUTORELOAD(&htim11, normal_arr);
 	}else{
+		// normal -> emergency
 		__HAL_TIM_SET_AUTORELOAD(&htim11, emerg_arr);
 	}
 
@@ -152,6 +157,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_TIM11_Init();
@@ -168,10 +174,13 @@ int main(void)
   {
 	  tud_task();
 	  mod_change_watchdog();
-	  cdc_task();
-//	  vendor_task();
-//	  hid_task();
-//	  check_usb_file_smart();
+	  if(!g_is_emergency_mode){
+		  vendor_task();
+		  //	  hid_task();
+		  check_usb_file_smart();
+	  }else{
+		  cdc_task();
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -334,6 +343,25 @@ static void MX_USB_OTG_FS_PCD_Init(void)
   /* USER CODE BEGIN USB_OTG_FS_Init 2 */
 
   /* USER CODE END USB_OTG_FS_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+  /* DMA1_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
 
