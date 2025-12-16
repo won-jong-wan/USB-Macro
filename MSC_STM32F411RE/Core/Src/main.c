@@ -17,15 +17,15 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include <main.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdbool.h>
+#include <usb_class.h>
 
-#include "tusb.h"
-#include "msc.h"
+#include <tusb.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,132 +63,6 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-// 1. Set Report Callback
-void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize)
-{
-  (void) instance; (void) report_id; (void) report_type; (void) buffer; (void) bufsize;
-}
-
-// 2. Get Report Callback
-uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen)
-{
-  (void) instance; (void) report_id; (void) report_type; (void) buffer; (void) reqlen;
-  return 0;
-}
-void hid_task(void)
-{
-  // 1. 10ms마다 실행 (폴링 간격 준수)
-  // HAL_GetTick()을 사용하여 넌블로킹 딜레이 구현
-  static uint32_t start_ms = 0;
-  if (HAL_GetTick() - start_ms < 10) return;
-  start_ms += 10;
-
-  // 2. USB가 연결되어 있고, HID가 준비되었는지 확인
-  // (중요: 준비 안 됐는데 보내면 다운됨)
-  if ( !tud_mounted() || !tud_hid_ready() ) return;
-
-  // ---------------------------------------------------------
-  // [시나리오] 5초마다 "hello" 타이핑하고 엔터 치기
-  // ---------------------------------------------------------
-  static uint32_t send_ms = 0;
-  static bool is_typing = false;
-
-  // 5초 주기 체크
-  if (HAL_GetTick() - send_ms > 5000)
-  {
-    send_ms = HAL_GetTick();
-    is_typing = true; // 타이핑 시작 신호
-  }
-
-  if (is_typing)
-  {
-    // 보낼 키 시퀀스: h, e, l, l, o, ENTER
-    // (USB HID 키코드: a=4, b=5 ... h=11 ...)
-    static uint8_t const key_seq[] = {
-      HID_KEY_H, HID_KEY_E, HID_KEY_L, HID_KEY_L, HID_KEY_O, HID_KEY_ENTER
-    };
-    static uint8_t seq_idx = 0;
-    static bool key_pressed = false;
-
-    if (key_pressed)
-    {
-      // [B] 키 떼기 (Release)
-      // 키를 눌렀으면 반드시 "아무것도 안 누름(NULL)"을 보내야 함
-      tud_hid_keyboard_report(0, 0, NULL);
-      key_pressed = false;
-
-      seq_idx++; // 다음 글자로 이동
-      if (seq_idx >= sizeof(key_seq)) {
-        seq_idx = 0;
-        is_typing = false; // 타이핑 끝
-      }
-    }
-    else
-    {
-      // [A] 키 누르기 (Press)
-      uint8_t keycode[6] = { 0 };
-      keycode[0] = key_seq[seq_idx];
-
-      // 리포트 전송 함수 (Interface 번호, Modifier, Keycode배열)
-      tud_hid_keyboard_report(0, 0, keycode);
-      key_pressed = true;
-    }
-  }
-}
-
-// Vendor 데이터 수신 콜백
-void tud_vendor_rx_cb(uint8_t itf, uint8_t const* buffer, uint32_t bufsize)
-{
-  (void) itf;    // 사용 안 함
-  (void) buffer; // [중요] 매개변수 무시! (믿지 않음)
-  (void) bufsize;// [중요] 매개변수 무시! (믿지 않음)
-
-  // 1. TinyUSB 내부에 진짜 쌓여있는 데이터 양을 확인
-  uint32_t available = tud_vendor_available();
-
-  // 2. 데이터가 진짜 있다면?
-  if ( available > 0 )
-  {
-    uint8_t my_buffer[64]; // 우리가 직접 마련한 그릇
-
-    // 3. 수동으로 읽어오기 (여기서 FIFO를 비웁니다)
-    // 읽어온 바이트 수를 리턴받음
-    uint32_t count = tud_vendor_read(my_buffer, sizeof(my_buffer));
-
-    // 읽어온 만큼만 처리
-    if (count > 0)
-    {
-       // [디버깅] LED 토글 (데이터 진짜 읽음!)
-       HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-
-       // 4. Echo Back (받은 거 그대로 돌려주기)
-       tud_vendor_write(my_buffer, count);
-
-       // 5. [필수] 즉시 전송 명령 (Flush)
-       tud_vendor_write_flush();
-    }
-  }
-}
-
-//void vendor_task(void)
-//{
-//  static uint32_t start_ms = 0;
-//
-//  // 1초마다 실행
-//  if (HAL_GetTick() - start_ms < 1000) return;
-//  start_ms += 1000;
-//
-//  if (tud_mounted())
-//  {
-//    char *msg = "1234\n";
-//    // 1초마다 "Alive"라는 메시지를 강제로 큐에 넣음
-//    tud_vendor_write(msg, 5);
-//
-//    // 강제로 플러시(Flush) 시도 - 버퍼에 있는 걸 즉시 하드웨어로 밀어내기
-//    tud_vendor_write_flush();
-//  }
-//}
 /* USER CODE END 0 */
 
 /**

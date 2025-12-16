@@ -5,10 +5,11 @@
  *      Author: jonwo
  */
 
-#ifndef INC_MSC_H_
-#define INC_MSC_H_
+#ifndef INC_USB_CLASS_H_
+#define INC_USB_CLASS_H_
 
-#include "main.h"
+#include <main.h>
+#include <tusb.h>
 
 #define DISK_BLOCK_NUM   128
 #define DISK_BLOCK_SIZE  512
@@ -50,4 +51,7 @@ extern uint8_t msc_disk[DISK_BLOCK_NUM][DISK_BLOCK_SIZE];
 void init_disk_data(void);
 void check_usb_file_smart(void);
 
-#endif /* INC_MSC_H_ */
+void hid_task(void);
+void vendor_task(void);
+
+#endif /* INC_USB_CLASS_H_ */

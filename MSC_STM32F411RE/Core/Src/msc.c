@@ -6,9 +6,7 @@
  */
 #include <string.h>
 #include <stdbool.h>
-
-#include "tusb.h"
-#include "msc.h"
+#include <usb_class.h>
 
 // --- 설정 ---
 // STM32F411RE는 RAM이 128KB입니다.

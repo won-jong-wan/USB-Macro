@@ -1,10 +1,6 @@
-../Core/Src/main.c:68:6:tud_hid_set_report_cb	1
-../Core/Src/main.c:74:10:tud_hid_get_report_cb	1
-../Core/Src/main.c:79:6:hid_task	8
-../Core/Src/main.c:141:6:tud_vendor_rx_cb	3
-../Core/Src/main.c:198:5:main	2
-../Core/Src/main.c:254:6:SystemClock_Config	3
-../Core/Src/main.c:300:13:MX_USART2_UART_Init	2
-../Core/Src/main.c:333:13:MX_USB_OTG_FS_PCD_Init	2
-../Core/Src/main.c:368:13:MX_GPIO_Init	1
-../Core/Src/main.c:410:6:Error_Handler	1
+../Core/Src/main.c:72:5:main	2
+../Core/Src/main.c:128:6:SystemClock_Config	3
+../Core/Src/main.c:174:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:207:13:MX_USB_OTG_FS_PCD_Init	2
+../Core/Src/main.c:242:13:MX_GPIO_Init	1
+../Core/Src/main.c:284:6:Error_Handler	1

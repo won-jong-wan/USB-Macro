@@ -1,0 +1,2 @@
+../Core/Src/vendor.c:10:6:tud_vendor_rx_cb	3
+../Core/Src/vendor.c:43:6:vendor_task	3
