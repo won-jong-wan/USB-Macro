@@ -18,6 +18,8 @@ Core/Src/usb_descriptors.o: ../Core/Src/usb_descriptors.c \
  C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/device/usbd.h \
  C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/hid/hid_device.h \
  C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/hid/hid.h \
+ C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/cdc/cdc_device.h \
+ C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/cdc/cdc.h \
  C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/msc/msc_device.h \
  C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/msc/msc.h \
  C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/vendor/vendor_device.h
@@ -40,6 +42,8 @@ C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/common/tusb_fi
 C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/device/usbd.h:
 C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/hid/hid_device.h:
 C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/hid/hid.h:
+C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/cdc/cdc_device.h:
+C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/cdc/cdc.h:
 C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/msc/msc_device.h:
 C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/msc/msc.h:
 C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/class/vendor/vendor_device.h:

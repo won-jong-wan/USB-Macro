@@ -5,38 +5,34 @@
  extern "C" {
 #endif
 
-// 1. 하드웨어 설정 (본인 칩에 맞게 수정 필요!)
-// STM32F4 등을 쓴다면 보통 OPT_MODE_DEVICE | OPT_MCU_STM32F4 라고 적습니다.
-// 일단 자동으로 잡도록 시도해봅니다.
+// --- 하드웨어 설정 ---
 #if defined(STM32F4)
   #define CFG_TUSB_MCU    OPT_MCU_STM32F4
 #elif defined(STM32F1)
   #define CFG_TUSB_MCU    OPT_MCU_STM32F1
 #else
-  // 컴파일 에러가 나면 수동으로 지정해야 합니다.
   #define CFG_TUSB_MCU    OPT_MCU_STM32F4
 #endif
 
 #define CFG_TUSB_RHPORT0_MODE       (OPT_MODE_DEVICE)
-
-// 2. 운영체제 사용 여부 (None)
 #define CFG_TUSB_OS                 OPT_OS_NONE
+#define CFG_TUD_ENDPOINT0_SIZE      64
 
-// 3. 메모리 최적화
-#define CFG_TUD_ENDPOINT0_SIZE    64
-
-// 4. 기능 활성화 (MSC 켜기!)
-#define CFG_TUD_CDC               0   // 시리얼 끄기
-#define CFG_TUD_MSC               1   // 저장장치 켜기
+// --- 기능 활성화 (전부 1로 둡니다) ---
+#define CFG_TUD_CDC               1
+#define CFG_TUD_MSC               1
 #define CFG_TUD_HID               1
-#define CFG_TUD_MIDI              0
 #define CFG_TUD_VENDOR            1
 
-// 5. MSC 버퍼 설정
+// --- 버퍼 설정 ---
 #define CFG_TUD_MSC_EP_BUFSIZE    512
 #define CFG_TUD_HID_EP_BUFSIZE    16
 #define CFG_TUD_VENDOR_RX_BUFSIZE 512
 #define CFG_TUD_VENDOR_TX_BUFSIZE 512
+
+// [추가] CDC 버퍼 설정 (이게 없으면 컴파일 에러 남)
+#define CFG_TUD_CDC_RX_BUFSIZE    64
+#define CFG_TUD_CDC_TX_BUFSIZE    64
 
 #ifdef __cplusplus
  }

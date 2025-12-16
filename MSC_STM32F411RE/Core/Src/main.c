@@ -17,7 +17,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <main.h>
+#include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -44,6 +44,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim11;
+
 UART_HandleTypeDef huart2;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
@@ -57,12 +59,68 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
+static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
-
+bool g_is_emergency_mode = 0;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+bool is_ready = true;
+
+uint16_t normal_arr = 10000-1;
+uint16_t emerg_arr = 1000-1;
+
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
+	if(is_ready){
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+	}
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	is_ready = false;
+
+	if(g_is_emergency_mode){
+		__HAL_TIM_SET_AUTORELOAD(&htim11, normal_arr);
+	}else{
+		__HAL_TIM_SET_AUTORELOAD(&htim11, emerg_arr);
+	}
+
+	g_is_emergency_mode = !g_is_emergency_mode;
+}
+
+void mod_change_watchdog(){
+	if(!is_ready){
+		tud_disconnect();
+		HAL_Delay(500);
+		tud_connect();
+
+		is_ready = true;
+	}
+}
+
+void cdc_task(void) {
+    // 1. 긴급 모드가 아니면 CDC 처리를 하지 않음
+    if (!g_is_emergency_mode) return;
+
+    // 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
+    if (tud_cdc_connected()) {
+        // 3. 읽을 데이터가 있는지 확인
+        if (tud_cdc_available()) {
+            // 버퍼 생성
+            char buf[64];
+
+            // 데이터 읽기
+            uint32_t count = tud_cdc_read(buf, sizeof(buf));
+
+            // 데이터 쓰기 (Echo Back)
+            tud_cdc_write(buf, count);
+
+            // 전송 버퍼 비우기 (즉시 전송)
+            tud_cdc_write_flush();
+        }
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -96,14 +154,12 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
+
   init_disk_data();
   tusb_init();
-
-  for(int i=0; i<3; i++) {
-        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); // 핀 번호 확인!
-        HAL_Delay(200);
-    }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,9 +167,11 @@ int main(void)
   while (1)
   {
 	  tud_task();
+	  mod_change_watchdog();
+	  cdc_task();
 //	  vendor_task();
 //	  hid_task();
-	  check_usb_file_smart();
+//	  check_usb_file_smart();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -164,6 +222,51 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief TIM11 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM11_Init(void)
+{
+
+  /* USER CODE BEGIN TIM11_Init 0 */
+
+  /* USER CODE END TIM11_Init 0 */
+
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM11_Init 1 */
+
+  /* USER CODE END TIM11_Init 1 */
+  htim11.Instance = TIM11;
+  htim11.Init.Prescaler = 7200-1;
+  htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim11.Init.Period = 10000-1;
+  htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim11) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim11, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM11_Init 2 */
+
+  /* USER CODE END TIM11_Init 2 */
+
 }
 
 /**
@@ -267,6 +370,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

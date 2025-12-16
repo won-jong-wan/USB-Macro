@@ -33,7 +33,7 @@
 ../Libs/tinyusb/src/device/usbd.c:642:6:tud_task_ext	25
 ../Libs/tinyusb/src/device/usbd.c:778:13:invoke_class_control	1
 ../Libs/tinyusb/src/device/usbd.c:786:13:process_control_request	56
-../Libs/tinyusb/src/device/usbd.c:1037:13:process_set_config	20
+../Libs/tinyusb/src/device/usbd.c:1037:13:process_set_config	22
 ../Libs/tinyusb/src/device/usbd.c:1160:13:process_get_descriptor	15
 ../Libs/tinyusb/src/device/usbd.c:1251:24:dcd_event_handler	35
 ../Libs/tinyusb/src/device/usbd.c:1350:6:usbd_int_set	2

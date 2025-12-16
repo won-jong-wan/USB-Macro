@@ -14,6 +14,8 @@ Libs/tinyusb/src/tusb.o: ../Libs/tinyusb/src/tusb.c \
  ../Libs/tinyusb/src/common/tusb_fifo.h ../Libs/tinyusb/src/device/usbd.h \
  ../Libs/tinyusb/src/class/hid/hid_device.h \
  ../Libs/tinyusb/src/class/hid/hid.h \
+ ../Libs/tinyusb/src/class/cdc/cdc_device.h \
+ ../Libs/tinyusb/src/class/cdc/cdc.h \
  ../Libs/tinyusb/src/class/msc/msc_device.h \
  ../Libs/tinyusb/src/class/msc/msc.h \
  ../Libs/tinyusb/src/class/vendor/vendor_device.h \
@@ -39,6 +41,8 @@ C:/Users/jonwo/Desktop/USB-Macro/MSC_STM32F411RE/Libs/tinyusb/src/osal/osal.h:
 ../Libs/tinyusb/src/device/usbd.h:
 ../Libs/tinyusb/src/class/hid/hid_device.h:
 ../Libs/tinyusb/src/class/hid/hid.h:
+../Libs/tinyusb/src/class/cdc/cdc_device.h:
+../Libs/tinyusb/src/class/cdc/cdc.h:
 ../Libs/tinyusb/src/class/msc/msc_device.h:
 ../Libs/tinyusb/src/class/msc/msc.h:
 ../Libs/tinyusb/src/class/vendor/vendor_device.h:
