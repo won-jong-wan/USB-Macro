@@ -6,16 +6,16 @@ obj-m = $(MOD).o
 CROSS = ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
 CC = arm-linux-gnueabihf-gcc
 #KDIR := /lib/modules/$(shell uname -r)/build
-KDIR = /home/ubuntu/pi_bsp/kernel/linux
+KDIR = /home/ubuntu/pi_bsp/kernel/linux 
 PWD = $(shell pwd)
 
 default: $(OBJ)
 	$(MAKE) -C $(KDIR) M=$(PWD) modules $(CROSS)
-	cp $(MOD).ko /srv/nfs
+	cp $(MOD).ko /srv/nfs/burger
 
 %.o: %.c
 	$(CC) -o $(APP) $<
-	cp $(APP) /srv/nfs
+	cp $(APP) /srv/nfs/burger
 
 clean:
 	rm -rf *.ko
