@@ -24,6 +24,8 @@ typedef struct {
 static uint8_t g_accum_buf[256]; // 조각난 데이터를 합칠 공간
 static uint32_t g_accum_cnt = 0; // 현재 모인 개수
 
+static uint8_t msg_dma[512];
+
 // Vendor 데이터 수신 콜백
 void tud_vendor_rx_cb(uint8_t itf, uint8_t const* buffer, uint32_t bufsize)
 {
@@ -44,7 +46,7 @@ void tud_vendor_rx_cb(uint8_t itf, uint8_t const* buffer, uint32_t bufsize)
 	uint32_t count = tud_vendor_read(my_buffer, sizeof(my_buffer));
 
 	// 읽어온 만큼만 처리
-	if (count == 0) return; // check 2: data exit?
+	if (count == 0) return; // check 2: data exist?
 
 	// [디버깅] LED 토글 (데이터 진짜 읽음!)
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); // LED BLINK
@@ -64,37 +66,21 @@ void tud_vendor_rx_cb(uint8_t itf, uint8_t const* buffer, uint32_t bufsize)
 	//////////////////////////
 	// UART 디버깅 메시지 출력
 	//////////////////////////
-	uint8_t msg[512]; // 넉넉한 버퍼
 	int len = 0;
 
 	// [방법 1] 내용을 한 방에 모아서 한 번만 보내기 (가장 추천)
 	// 이렇게 하면 끊김 없이 깔끔하게 나옵니다.
-	len += sprintf((char*)msg + len, "\r\n--- Packet Received ---\r\n");
-	len += sprintf((char*)msg + len, "[RX] Magic: 0x%08lX\r\n", pkt->magic);
-	len += sprintf((char*)msg + len, "[RX] Info : 0x%02X\r\n", pkt->info);
-	len += sprintf((char*)msg + len, "[RX] Cmd  : %s\r\n", pkt->command);
-	len += sprintf((char*)msg + len, "-----------------------\r\n");
+	len += sprintf((char*)msg_dma + len, "\r\n--- Packet Received ---\r\n");
+	len += sprintf((char*)msg_dma + len, "[RX] Magic: 0x%08lX\r\n", pkt->magic);
+	len += sprintf((char*)msg_dma + len, "[RX] Info : 0x%02X\r\n", pkt->info);
+	len += sprintf((char*)msg_dma + len, "[RX] Cmd  : %s\r\n", pkt->command);
+	len += sprintf((char*)msg_dma + len, "-----------------------\r\n");
 
 	// DMA 대신 일반 Transmit 사용 (Timeout: 100ms)
 	// 이 함수는 다 보낼 때까지 여기서 기다립니다.
-	HAL_UART_Transmit(&huart2, msg, len, 100);
+	HAL_UART_Transmit_DMA(&huart2, msg_dma, len);
 
-	// (2) 동작 수행 (LED 제어)
-	// 문자열 비교 (안전하게 strncmp 권장)
-	if (strncmp(pkt->command, "LED_ON", 6) == 0)
-	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-		strcpy(pkt->command, "OK: LED ON (Checked)");
-	}
-	else if (strncmp(pkt->command, "LED_OFF", 7) == 0)
-	{
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-		strcpy(pkt->command, "OK: LED OFF (Checked)");
-	}
-	else
-	{
-		strcpy(pkt->command, "ECHO: Message Received");
-	}
+	strcpy(pkt->command, "ECHO: Message Received");
 
 	// 길이 정보 갱신
 	pkt->cmd_len = strlen(pkt->command);

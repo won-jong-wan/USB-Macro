@@ -3,10 +3,10 @@
 ../Core/Src/main.c:97:6:mod_change_watchdog	2
 ../Core/Src/main.c:107:6:cdc_task	4
 ../Core/Src/main.c:135:5:main	2
-../Core/Src/main.c:200:6:SystemClock_Config	3
-../Core/Src/main.c:246:13:MX_TIM11_Init	4
-../Core/Src/main.c:291:13:MX_USART2_UART_Init	2
-../Core/Src/main.c:324:13:MX_USB_OTG_FS_PCD_Init	2
-../Core/Src/main.c:357:13:MX_DMA_Init	1
-../Core/Src/main.c:378:13:MX_GPIO_Init	1
-../Core/Src/main.c:424:6:Error_Handler	1
+../Core/Src/main.c:199:6:SystemClock_Config	3
+../Core/Src/main.c:245:13:MX_TIM11_Init	4
+../Core/Src/main.c:290:13:MX_USART2_UART_Init	2
+../Core/Src/main.c:323:13:MX_USB_OTG_FS_PCD_Init	2
+../Core/Src/main.c:356:13:MX_DMA_Init	1
+../Core/Src/main.c:377:13:MX_GPIO_Init	1
+../Core/Src/main.c:423:6:Error_Handler	1
