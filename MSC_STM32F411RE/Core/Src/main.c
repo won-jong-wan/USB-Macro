@@ -53,7 +53,11 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-
+enum {
+    USB_MODE_CDC = 0,       // 긴급/디버그 모드 (CDC Only)
+    USB_MODE_MSC_VENDOR = 1,    // 펌웨어 업데이트 등 (MSC + Vendor)
+    USB_MODE_HID_MSC = 2,        // 평상시 사용 (HID + MSC)
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,34 +68,40 @@ static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
-bool g_is_emergency_mode = 0;
+uint8_t g_usb_mode = USB_MODE_MSC_VENDOR;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 bool is_ready = true;
 
-uint16_t normal_arr = 10000-1;
-uint16_t emerg_arr = 1000-1;
+uint16_t window_arr = 5000-1;
+uint16_t linux_arr = 1000-1;
+uint16_t emerg_arr = 500-1;
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
 	if(is_ready){
-//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	is_ready = false;
 
-	if(g_is_emergency_mode){
-		// emergency -> normal
-		__HAL_TIM_SET_AUTORELOAD(&htim11, normal_arr);
-	}else{
-		// normal -> emergency
-		__HAL_TIM_SET_AUTORELOAD(&htim11, emerg_arr);
+	switch (g_usb_mode) {
+		case USB_MODE_CDC:
+			__HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
+			g_usb_mode = USB_MODE_MSC_VENDOR;
+			break;
+		case USB_MODE_MSC_VENDOR:
+			__HAL_TIM_SET_AUTORELOAD(&htim11, window_arr);
+			g_usb_mode = USB_MODE_HID_MSC;
+			break;
+		case USB_MODE_HID_MSC:
+			__HAL_TIM_SET_AUTORELOAD(&htim11, emerg_arr);
+			g_usb_mode = USB_MODE_CDC;
+			break;
 	}
-
-	g_is_emergency_mode = !g_is_emergency_mode;
 }
 
 void mod_change_watchdog(){
@@ -106,7 +116,7 @@ void mod_change_watchdog(){
 
 void cdc_task(void) {
     // 1. 긴급 모드가 아니면 CDC 처리를 하지 않음
-    if (!g_is_emergency_mode) return;
+    if (g_usb_mode != USB_MODE_CDC) return;
 
     // 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
     if (tud_cdc_connected()) {
@@ -167,24 +177,30 @@ int main(void)
   init_disk_data();
   tusb_init();
 
-  uint8_t hello[] = "UART OK\n";
+  g_usb_mode = USB_MODE_MSC_VENDOR;
+  __HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
 
-  // 배열의 이름(hello)은 그 자체로 주소값이므로 그대로 넣어줍니다.
-  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)hello, 9);
+  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)"UART OK\n", 9);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  tud_task();
-	  mod_change_watchdog();
-	  if(!g_is_emergency_mode){
-//	 	  hid_task();
-		  check_usb_file_smart();
-	  }else{
-		  cdc_task();
-	  }
+		tud_task();
+		mod_change_watchdog();
+
+		switch (g_usb_mode) {
+			case USB_MODE_CDC:
+				cdc_task();
+				break;
+			case USB_MODE_MSC_VENDOR:
+				check_usb_file_smart();
+				break;
+			case USB_MODE_HID_MSC:
+				hid_task();
+				break;
+		}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
