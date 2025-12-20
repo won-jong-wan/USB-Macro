@@ -1,2 +1,2 @@
-../Core/Src/vendor.c:10:6:tud_vendor_rx_cb	112	static
-../Core/Src/vendor.c:43:6:vendor_task	24	static
+../Core/Src/vendor.c:28:6:tud_vendor_rx_cb	640	static
+../Core/Src/vendor.c:121:6:vendor_task	16	static

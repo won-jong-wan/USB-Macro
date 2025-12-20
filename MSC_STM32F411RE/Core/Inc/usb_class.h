@@ -47,11 +47,12 @@ typedef struct {
 
 // 실제 디스크 역할을 할 메모리 배열
 extern uint8_t msc_disk[DISK_BLOCK_NUM][DISK_BLOCK_SIZE];
+extern UART_HandleTypeDef huart2;
 
 void init_disk_data(void);
 void check_usb_file_smart(void);
 
 void hid_task(void);
-void vendor_task(void);
+//void vendor_task(void);
 
 #endif /* INC_USB_CLASS_H_ */

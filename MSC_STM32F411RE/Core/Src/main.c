@@ -76,7 +76,7 @@ uint16_t emerg_arr = 1000-1;
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
 	if(is_ready){
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 	}
 }
 
@@ -166,6 +166,11 @@ int main(void)
 
   init_disk_data();
   tusb_init();
+
+  uint8_t hello[] = "UART OK\n";
+
+  // 배열의 이름(hello)은 그 자체로 주소값이므로 그대로 넣어줍니다.
+  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)hello, 9);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -175,8 +180,7 @@ int main(void)
 	  tud_task();
 	  mod_change_watchdog();
 	  if(!g_is_emergency_mode){
-		  vendor_task();
-		  //	  hid_task();
+//	 	  hid_task();
 		  check_usb_file_smart();
 	  }else{
 		  cdc_task();
