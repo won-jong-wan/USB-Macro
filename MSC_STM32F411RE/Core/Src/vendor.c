@@ -24,7 +24,7 @@ typedef struct {
 static uint8_t g_accum_buf[512]; // 조각난 데이터를 합칠 공간
 static uint32_t g_accum_cnt = 0; // 현재 모인 개수
 
-static uint8_t msg_dma[512];
+uint8_t msg_dma[512];
 
 // Vendor 데이터 수신 콜백
 void tud_vendor_rx_cb(uint8_t itf, uint8_t const* buffer, uint32_t bufsize)

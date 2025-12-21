@@ -24,8 +24,15 @@
 #include <string.h>
 #include <stdbool.h>
 #include <usb_class.h>
+#include <stdio.h>
 
 #include <tusb.h>
+
+enum {
+    USB_MODE_CDC = 0,       // 긴급/디버그 모드 (CDC Only)
+    USB_MODE_MSC_VENDOR = 1,    // 펌웨어 업데이트 등 (MSC + Vendor)
+    USB_MODE_HID_MSC = 2,        // 평상시 사용 (HID + MSC)
+};
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +51,10 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+SD_HandleTypeDef hsd;
+DMA_HandleTypeDef hdma_sdio_rx;
+DMA_HandleTypeDef hdma_sdio_tx;
+
 TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart2;
@@ -53,11 +64,6 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-enum {
-    USB_MODE_CDC = 0,       // 긴급/디버그 모드 (CDC Only)
-    USB_MODE_MSC_VENDOR = 1,    // 펌웨어 업데이트 등 (MSC + Vendor)
-    USB_MODE_HID_MSC = 2,        // 평상시 사용 (HID + MSC)
-};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,12 +73,35 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_TIM11_Init(void);
+static void MX_SDIO_SD_Init(void);
 /* USER CODE BEGIN PFP */
+extern char msg_dma[512];
 uint8_t g_usb_mode = USB_MODE_MSC_VENDOR;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifdef __GNUC__    // Add for printf
+/* With GCC, small printf (option LD Linker->Libraries->Small printf
+   set to 'Yes') calls __io_putchar() */
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  * @param  None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE   // Add for printf
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART3 and Loop until the end of transmission */
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
+
+  return ch;
+}
+
 bool is_ready = true;
 
 uint16_t window_arr = 5000-1;
@@ -115,24 +144,14 @@ void mod_change_watchdog(){
 }
 
 void cdc_task(void) {
-    // 1. 긴급 모드가 아니면 CDC 처리를 하지 않음
-    if (g_usb_mode != USB_MODE_CDC) return;
-
     // 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
     if (tud_cdc_connected()) {
         // 3. 읽을 데이터가 있는지 확인
         if (tud_cdc_available()) {
-            // 버퍼 생성
-            char buf[64];
-
             // 데이터 읽기
-            uint32_t count = tud_cdc_read(buf, sizeof(buf));
+            uint32_t count = tud_cdc_read(msg_dma, sizeof(msg_dma));
 
-            // 데이터 쓰기 (Echo Back)
-            tud_cdc_write(buf, count);
-
-            // 전송 버퍼 비우기 (즉시 전송)
-            tud_cdc_write_flush();
+            HAL_UART_Transmit_DMA(&huart2, (uint8_t*) msg_dma, count);
         }
     }
 }
@@ -171,16 +190,31 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_TIM11_Init();
+  MX_SDIO_SD_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
+//  	printf("Wiping Sector 0...\r\n");
+//
+//    uint8_t zero_buf[512] = {0}; // 0으로 가득 찬 버퍼
+//
+//    // SD카드 준비 대기
+//    while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) { HAL_Delay(10); }
+//
+//    // 0번지 덮어쓰기
+//    if (HAL_SD_WriteBlocks(&hsd, zero_buf, 0, 1, 1000) == HAL_OK) {
+//        printf("Wipe Success! Windows will see this as a NEW drive.\r\n");
+//        // 확실한 적용을 위해 잠시 대기
+//        while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
+//    } else {
+//        printf("Wipe Failed!\r\n");
+//    }
+	tusb_init();
 
-  init_disk_data();
-  tusb_init();
+	// 타이머 시작 등...
+	HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
+	g_usb_mode = USB_MODE_MSC_VENDOR;
+	__HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
+	HAL_UART_Transmit_DMA(&huart2, (uint8_t*)"UART OK\n", 9);
 
-  g_usb_mode = USB_MODE_MSC_VENDOR;
-  __HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
-
-  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)"UART OK\n", 9);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -195,7 +229,7 @@ int main(void)
 				cdc_task();
 				break;
 			case USB_MODE_MSC_VENDOR:
-				check_usb_file_smart();
+//				check_usb_file_smart();
 				break;
 			case USB_MODE_HID_MSC:
 				hid_task();
@@ -251,6 +285,38 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief SDIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SDIO_SD_Init(void)
+{
+
+  /* USER CODE BEGIN SDIO_Init 0 */
+
+  /* USER CODE END SDIO_Init 0 */
+
+  /* USER CODE BEGIN SDIO_Init 1 */
+
+  /* USER CODE END SDIO_Init 1 */
+  hsd.Instance = SDIO;
+  hsd.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;
+  hsd.Init.ClockBypass = SDIO_CLOCK_BYPASS_DISABLE;
+  hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
+  hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
+  hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
+  hsd.Init.ClockDiv = 8;
+  if (HAL_SD_Init(&hsd) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SDIO_Init 2 */
+
+  /* USER CODE END SDIO_Init 2 */
+
 }
 
 /**
@@ -374,6 +440,7 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
+  __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
@@ -382,6 +449,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+  /* DMA2_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }
 
