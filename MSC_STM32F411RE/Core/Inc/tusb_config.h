@@ -11,7 +11,7 @@
 #elif defined(STM32F1)
   #define CFG_TUSB_MCU    OPT_MCU_STM32F1
 #else
-  #define CFG_TUSB_MCU    OPT_MCU_STM32F4
+#define CFG_TUSB_MCU    OPT_MCU_STM32F4
 #endif
 
 #define CFG_TUSB_RHPORT0_MODE       (OPT_MODE_DEVICE)

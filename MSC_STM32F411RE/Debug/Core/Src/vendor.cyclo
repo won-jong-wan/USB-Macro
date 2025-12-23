@@ -1,2 +1,0 @@
-../Core/Src/vendor.c:49:6:Process_SD_Write_Request	6
-../Core/Src/vendor.c:94:6:tud_vendor_rx_cb	8

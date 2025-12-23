@@ -310,8 +310,10 @@ void DMA2_Stream3_IRQHandler(void)
 void OTG_FS_IRQHandler(void)
 {
   /* USER CODE BEGIN OTG_FS_IRQn 0 */
+#ifndef WITHOUT_TUD
 	tud_int_handler(0);
 	return;
+#endif // WITHOUT_TUD
   /* USER CODE END OTG_FS_IRQn 0 */
   HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
   /* USER CODE BEGIN OTG_FS_IRQn 1 */

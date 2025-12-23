@@ -4,8 +4,8 @@
  *  Created on: Dec 16, 2025
  *      Author: jonwo
  */
-
-#include <usb_class.h>
+#include <main.h>
+#include <tusb.h>
 
 // 1. Set Report Callback
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize)

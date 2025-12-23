@@ -1,181 +1,129 @@
 /*
- * SD_IO.c
+ * sd_io.c
  *
  *  Created on: Dec 23, 2025
- *      Author: kccistc
+ *      Author: jonwo
  */
-#include "main.h"
-#include <stdio.h>
+
+#include <main.h>
+#include <buffer_event.h>
+
 #include <string.h>
+#include <stdio.h>
 
-#include "usb_class.h"
+//#define FLAG_WAS_CHECKED
 
-volatile SD_AsyncState g_sd_state = SD_STATE_READY;
+#define MAX_BLOCK 64 // 64 ~ 256이 최적
+#define BLOCK_SIZE 512
 
-volatile uint8_t g_sd_tx_done = 0;
-volatile uint8_t g_sd_rx_done = 0;
-
-// 1. 구조체 정의
-typedef struct {
-  uint32_t magic;      // 4 bytes
-
-  // [Info Field: 1 byte]
-  // 7-4: Version(4), 3: Type(1), 2: IsEnd(1), 1-0: Zero(2)
-  uint8_t info;
-
-  uint16_t cmd_len;    // 2 bytes
-  char command[249];   // 249 bytes
-} __attribute__((packed)) datapacket; // Total: 256 Bytes
-
-// 구조체 크기 검증 (필수)
-_Static_assert(sizeof(datapacket) == 256, "Packet size is not 256 bytes!");
-
+#define BUFFER_SIZE MAX_BLOCK*BLOCK_SIZE // 64 * 512 = 32kb
+                                         // 128 * 512 = 64kb // STM32F411RE MAX RAM = 128kb
 extern SD_HandleTypeDef hsd;
 extern UART_HandleTypeDef huart2;
 
+uint32_t g_sd_block_nbr;
+
+uint32_t g_msc_start_address;
+uint32_t g_vendor_start_address;
+
+volatile uint8_t g_sd_state;
+volatile uint8_t g_sd_card_state;
+uint8_t sd_buffer_need_flash = false;
+
+volatile task_q_t task_q;
+
+uint8_t g_msc2sd_buffer;
+uint8_t g_vendor2sd_buffer;
+uint8_t sd_buffer[BUFFER_SIZE]__attribute__((aligned(4))); // DMA 최적화
+
+static uint32_t time = 0; // 속도는 결국 버퍼의 문제
+
+void SD_Init(void){
+	HAL_SD_CardInfoTypeDef pCardInfo;
+	HAL_SD_GetCardInfo(&hsd, &pCardInfo);
+
+	g_sd_block_nbr = pCardInfo.BlockNbr;
+
+	g_vendor_start_address = g_sd_block_nbr/2;
+
+	printf("[SD_Init] g_sd_block_nbr: %ld g_vendor_start_address: %ld\n", g_sd_block_nbr, g_vendor_start_address);
+}
+
+void SD_Buffer_Reset(void){
+	memset(sd_buffer, 0, BUFFER_SIZE);
+}
+
+void SD_Test(void){
+	SD_Buffer_Reset();
+
+	venpack_t test_pack;
+	test_pack.magic = 0xBEEFCAFE;
+	test_pack.info = 0x1C;
+	const char* com = "hello everyone";
+	test_pack.cmd_len = strlen(com);
+	memcpy(test_pack.command, com, test_pack.cmd_len );
+
+	memcpy(sd_buffer, &test_pack, VENPACK_SIZE);
+	printf("[Write] %s \n", test_pack.command);
+	time = HAL_GetTick();
+	SD_Write_DMA_Async(g_vendor_start_address, sd_buffer, 1);
+
+	while(g_sd_state != SD_STATE_READY){} // 유사 동기
+	printf("Write time: %ld \n", HAL_GetTick() - time);
+
+	SD_Buffer_Reset();
+	printf("[BefRead] %s\n", sd_buffer);
+	time = HAL_GetTick();
+	SD_Read_DMA_Async(g_vendor_start_address, sd_buffer, 1);
+
+	while(g_sd_state != SD_STATE_READY){}
+
+	venpack_t* read_pack = (venpack_t*)sd_buffer;
+	printf("[Read] %s \n", read_pack->command);
+	printf("Read time: %ld \n", HAL_GetTick() - time);
+}
+
 void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
-  g_sd_state = SD_STATE_READY; // 쓰기 완료 -> 대기 상태로 복귀
+	g_sd_state = SD_STATE_READY; // 쓰기 완료 -> 대기 상태로 복귀
+	printf("[Tx]\n");
 }
 
 void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd) {
-  g_sd_state = SD_STATE_READY; // 읽기 완료 -> 대기 상태로 복귀
+	g_sd_state = SD_STATE_READY; // 읽기 완료 -> 대기 상태로 복귀
+	printf("[Rx]\n");
 }
 
 void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd) {
-  g_sd_state = SD_STATE_ERROR; // 에러 발생
+	g_sd_state = SD_STATE_ERROR; // 에러 발생
+	printf("[Err]\n");
 }
 
-//// printf용
-//int _write(int file, char *ptr, int len) {
-//  HAL_UART_Transmit(&huart2, (uint8_t *)ptr, len, 100);
-//  return len;
-//}
-
-// 비동기 쓰기 시작 (기다리지 않음!)
 int SD_Write_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks) {
-  // 1. 카드가 이전 작업을 하고 있는지 확인 (필수)
+#ifndef FLAG_WAS_CHECKED
   if (g_sd_state != SD_STATE_READY) return -1; // Busy
-  while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){} // Card Busy
+  while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){} // 유사 동기
+#endif //NON_CHECKED
 
-  // 2. 상태 변경 후 DMA 시작
-  g_sd_state = SD_STATE_BUSY_TX;
-  if (HAL_SD_WriteBlocks_DMA(&hsd, buf, lba, nblocks) != HAL_OK) {
-    g_sd_state = SD_STATE_ERROR;
-    return -3;
-  }
+	g_sd_state = SD_STATE_BUSY_TX;
+	if (HAL_SD_WriteBlocks_DMA(&hsd, buf, lba, nblocks) != HAL_OK) {
+		g_sd_state = SD_STATE_ERROR;
+		return -3;
+	}
 
-  return 0; // 즉시 리턴 (성공적으로 시작됨)
+	return 0;
 }
 
-// 비동기 읽기 시작
 int SD_Read_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks) {
+#ifndef FLAG_WAS_CHECKED
   if (g_sd_state != SD_STATE_READY) return -1;
-  while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){};
+  while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){} // 유사 동기
+#endif // NON_CHECKED
 
-  g_sd_state = SD_STATE_BUSY_RX;
-  if (HAL_SD_ReadBlocks_DMA(&hsd, buf, lba, nblocks) != HAL_OK) {
-    g_sd_state = SD_STATE_ERROR;
-    return -3;
-  }
+	g_sd_state = SD_STATE_BUSY_RX;
+	if (HAL_SD_ReadBlocks_DMA(&hsd, buf, lba, nblocks) != HAL_OK) {
+		g_sd_state = SD_STATE_ERROR;
+		return -3;
+	}
 
-  return 0; // 즉시 리턴
+	return 0; // 즉시 리턴
 }
-#ifdef TEST
-
-#define CHUNK_SIZE_KB 32
-#define STRUCT_PER_CHUNK (CHUNK_SIZE_KB * 1024 / sizeof(BigLog)) // 128개
-#define BLOCKS_PER_CHUNK (CHUNK_SIZE_KB * 1024 / 512)            // 64 blocks
-#define TEST_ITERATIONS 32
-
-uint8_t w_buf[CHUNK_SIZE_KB * 1024] __attribute__((aligned(4)));
-uint8_t r_buf[CHUNK_SIZE_KB * 1024] __attribute__((aligned(4)));
-
-void SD_test(void){
-	printf("\r\n=== Custom Packet (256B) SD Test ===\r\n");
-
-	  // 4. 데이터 생성 (가상의 명령 패킷 만들기)
-	  datapacket *pPack = (datapacket *)w_buf;
-
-	  printf("Generating %d packets...\r\n", PACKET_COUNT);
-
-	  for (int i = 0; i < PACKET_COUNT; i++) {
-	      pPack[i].magic = 0xCAFEBABE; // 매직 넘버
-
-	      // 비트 필드 설정 예시
-	      // Version: 5, Type: 1, IsEnd: (마지막 패킷만 1, 나머지 0)
-	      uint8_t ver = 5;
-	      uint8_t type = 1;
-	      uint8_t isEnd = (i == PACKET_COUNT - 1) ? 1 : 0;
-
-	      pPack[i].info = PACK_INFO(ver, type, isEnd);
-
-	      // 명령어 문자열 채우기
-	      char temp_cmd[64];
-	      sprintf(temp_cmd, "CMD_MOVE_X_%d", i * 10);
-
-	      pPack[i].cmd_len = strlen(temp_cmd);
-	      strncpy(pPack[i].command, temp_cmd, 249);
-	  }
-
-	  // 5. SD 카드에 쓰기 (LBA: 10000)
-	  uint32_t target_lba = 10000;
-
-	  printf("Writing to SD...\r\n");
-	  if (SD_Write_DMA_Async(target_lba, w_buf, SD_BLOCKS) != 0) {
-	      printf("Write Failed!\r\n");
-	      Error_Handler();
-	  }
-
-	  // DMA 및 카드 저장 대기
-	  while (g_sd_state != SD_STATE_READY) {}
-	  while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
-	  printf("Write Complete.\r\n");
-
-	  // 6. SD 카드에서 읽기
-	  printf("Reading back...\r\n");
-	  memset(r_buf, 0, sizeof(r_buf)); // 버퍼 클리어
-
-	  if (SD_Read_DMA_Async(target_lba, r_buf, SD_BLOCKS) != 0) {
-	      printf("Read Failed!\r\n");
-	      Error_Handler();
-	  }
-
-	  while (g_sd_state != SD_STATE_READY) {}
-	  while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
-	  printf("Read Complete.\r\n");
-
-	  // 7. 데이터 검증 및 디코딩
-	  datapacket *pRead = (datapacket *)r_buf;
-	  int err_cnt = 0;
-
-	  printf("\r\n--- Decoding First 3 Packets ---\r\n");
-	  for (int i = 0; i < 3; i++) {
-	      printf("[%d] Magic: 0x%lX | Ver: %d, Type: %d, End: %d | Cmd: %s\r\n",
-	             i,
-	             pRead[i].magic,
-	             GET_VER(pRead[i].info),
-	             GET_TYPE(pRead[i].info),
-	             GET_END(pRead[i].info),
-	             pRead[i].command);
-	  }
-
-	  // 전체 검수
-	  for (int i = 0; i < PACKET_COUNT; i++) {
-	      if (pRead[i].magic != 0xCAFEBABE) err_cnt++;
-	      // 마지막 패킷의 isEnd 비트가 1인지 확인
-	      if (i == PACKET_COUNT - 1) {
-	          if (GET_END(pRead[i].info) != 1) {
-	              printf("Last packet END flag missing!\r\n");
-	              err_cnt++;
-	          }
-	      }
-	  }
-
-	  if (err_cnt == 0) {
-	      printf("\r\n[SUCCESS] All packets verified perfectly!\r\n");
-	  } else {
-	      printf("\r\n[FAIL] %d errors found.\r\n", err_cnt);
-	  }
-}
-#endif
-

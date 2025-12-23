@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -23,16 +23,10 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdbool.h>
-#include <usb_class.h>
 #include <stdio.h>
 
 #include <tusb.h>
-
-enum {
-    USB_MODE_CDC = 0,       // 긴급/디버그 모드 (CDC Only)
-    USB_MODE_MSC_VENDOR = 1,    // 펌웨어 업데이트 등 (MSC + Vendor)
-    USB_MODE_HID_MSC = 2,        // 평상시 사용 (HID + MSC)
-};
+#include <buffer_event.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,6 +58,15 @@ DMA_HandleTypeDef hdma_usart2_tx;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
+#define WINDOW_ARR (5000 - 1)
+#define LINUX_ARR (1000 - 1)
+#define EMERG_ARR (500 - 1)
+
+volatile uint8_t g_usb_mode = USB_MODE_MSC_VENDOR;
+volatile bool usb_ready = true;
+
+char msg_dma[512];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,421 +78,387 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_SDIO_SD_Init(void);
 /* USER CODE BEGIN PFP */
-extern char msg_dma[512];
-uint8_t g_usb_mode = USB_MODE_MSC_VENDOR;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#ifdef __GNUC__    // Add for printf
-/* With GCC, small printf (option LD Linker->Libraries->Small printf
-   set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
-/**
-  * @brief  Retargets the C library printf function to the USART.
-  * @param  None
-  * @retval None
-  */
-PUTCHAR_PROTOTYPE   // Add for printf
-{
-  /* Place your implementation of fputc here */
-  /* e.g. write a character to the USART3 and Loop until the end of transmission */
-  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
 
-  return ch;
+int _write(int file, char *ptr, int len) {
+	(void) file;
+	HAL_UART_Transmit(&huart2, (uint8_t*) ptr, len, HAL_MAX_DELAY);
+	return len;
 }
 
-bool is_ready = true;
-
-uint16_t window_arr = 5000-1;
-uint16_t linux_arr = 1000-1;
-uint16_t emerg_arr = 500-1;
-
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
-	if(is_ready){
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (usb_ready) {
 		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 	}
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-	is_ready = false;
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	usb_ready = false;
 
 	switch (g_usb_mode) {
-		case USB_MODE_CDC:
-			__HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
-			g_usb_mode = USB_MODE_MSC_VENDOR;
-			break;
-		case USB_MODE_MSC_VENDOR:
-			__HAL_TIM_SET_AUTORELOAD(&htim11, window_arr);
-			g_usb_mode = USB_MODE_HID_MSC;
-			break;
-		case USB_MODE_HID_MSC:
-			__HAL_TIM_SET_AUTORELOAD(&htim11, emerg_arr);
-			g_usb_mode = USB_MODE_CDC;
-			break;
+	case USB_MODE_CDC:
+		__HAL_TIM_SET_AUTORELOAD(&htim11, LINUX_ARR);
+		g_usb_mode = USB_MODE_MSC_VENDOR;
+		break;
+	case USB_MODE_MSC_VENDOR:
+		__HAL_TIM_SET_AUTORELOAD(&htim11, WINDOW_ARR);
+		g_usb_mode = USB_MODE_HID_MSC;
+		break;
+	case USB_MODE_HID_MSC:
+		__HAL_TIM_SET_AUTORELOAD(&htim11, EMERG_ARR);
+		g_usb_mode = USB_MODE_CDC;
+		break;
 	}
 }
 
-void mod_change_watchdog(){
-	if(!is_ready){
+void mod_change_watchdog() {
+	if (!usb_ready) {
 		tud_disconnect();
 		HAL_Delay(500);
 		tud_connect();
 
-		is_ready = true;
+		usb_ready = true;
 	}
 }
 
 void cdc_task(void) {
-    // 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
-    if (tud_cdc_connected()) {
-        // 3. 읽을 데이터가 있는지 확인
-        if (tud_cdc_available()) {
-            // 데이터 읽기
-            uint32_t count = tud_cdc_read(msg_dma, sizeof(msg_dma));
+	// 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
+	if (tud_cdc_connected()) {
+		// 3. 읽을 데이터가 있는지 확인
+		if (tud_cdc_available()) {
+			// 데이터 읽기
+			uint32_t count = tud_cdc_read(msg_dma, sizeof(msg_dma));
 
-            HAL_UART_Transmit_DMA(&huart2, (uint8_t*) msg_dma, count);
-        }
-    }
+			HAL_UART_Transmit_DMA(&huart2, (uint8_t*) msg_dma, count);
+		}
+	}
 }
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
 
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_USART2_UART_Init();
-  MX_USB_OTG_FS_PCD_Init();
-  MX_TIM11_Init();
-  MX_SDIO_SD_Init();
-  /* USER CODE BEGIN 2 */
-  init_disk_data();
-  tusb_init();
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_USART2_UART_Init();
+	MX_USB_OTG_FS_PCD_Init();
+	MX_TIM11_Init();
+	MX_SDIO_SD_Init();
+	/* USER CODE BEGIN 2 */
+#ifndef WITHOUT_TUD
+	tusb_init();
+#endif // WITHOUT_TUD
 
-  // 타이머 시작 등...
-  HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
-  g_usb_mode = USB_MODE_MSC_VENDOR;
-  __HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
-  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)"UART OK\n", 9);
-//  SD_test();
-  /* USER CODE END 2 */
+	SD_Init();
+	SD_Test();
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
+
+	g_usb_mode = USB_MODE_MSC_VENDOR;
+	__HAL_TIM_SET_AUTORELOAD(&htim11, LINUX_ARR);
+
+	printf("USART OK!\n");
+	/* USER CODE END 2 */
+
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1) {
+#ifndef WITHOUT_TUD
 		tud_task();
+#endif // WITHOUT_TUD
 		mod_change_watchdog();
 
 		switch (g_usb_mode) {
-			case USB_MODE_CDC:
-				cdc_task();
-				break;
-			case USB_MODE_MSC_VENDOR:
-				Process_SD_Write_Request();
-//				check_usb_file_smart();
-				break;
-			case USB_MODE_HID_MSC:
-				hid_task();
-				break;
+		case USB_MODE_CDC:
+			cdc_task();
+			break;
+		case USB_MODE_MSC_VENDOR:
+			break;
+		case USB_MODE_HID_MSC:
+//			hid_task();
+			break;
 		}
-    /* USER CODE END WHILE */
+		// 3연속의 while 구조?
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+		/* USER CODE BEGIN 3 */
+	}
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Configure the main internal regulator output voltage
+	 */
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 72;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 3;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	/** Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure.
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLM = 4;
+	RCC_OscInitStruct.PLL.PLLN = 72;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = 3;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	/** Initializes the CPU, AHB and APB buses clocks
+	 */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /**
-  * @brief SDIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SDIO_SD_Init(void)
-{
+ * @brief SDIO Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SDIO_SD_Init(void) {
 
-  /* USER CODE BEGIN SDIO_Init 0 */
+	/* USER CODE BEGIN SDIO_Init 0 */
 
-  /* USER CODE END SDIO_Init 0 */
+	/* USER CODE END SDIO_Init 0 */
 
-  /* USER CODE BEGIN SDIO_Init 1 */
+	/* USER CODE BEGIN SDIO_Init 1 */
 
-  /* USER CODE END SDIO_Init 1 */
-  hsd.Instance = SDIO;
-  hsd.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;
-  hsd.Init.ClockBypass = SDIO_CLOCK_BYPASS_DISABLE;
-  hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
-  hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
-  hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
-  if (HAL_SD_Init(&hsd) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SDIO_Init 2 */
+	/* USER CODE END SDIO_Init 1 */
+	hsd.Instance = SDIO;
+	hsd.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;
+	hsd.Init.ClockBypass = SDIO_CLOCK_BYPASS_DISABLE;
+	hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
+	hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
+	hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
+	hsd.Init.ClockDiv = 0;
+	if (HAL_SD_Init(&hsd) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN SDIO_Init 2 */
 
-  /* USER CODE END SDIO_Init 2 */
+	/* USER CODE END SDIO_Init 2 */
 
 }
 
 /**
-  * @brief TIM11 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM11_Init(void)
-{
+ * @brief TIM11 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_TIM11_Init(void) {
 
-  /* USER CODE BEGIN TIM11_Init 0 */
+	/* USER CODE BEGIN TIM11_Init 0 */
 
-  /* USER CODE END TIM11_Init 0 */
+	/* USER CODE END TIM11_Init 0 */
 
-  TIM_OC_InitTypeDef sConfigOC = {0};
+	TIM_OC_InitTypeDef sConfigOC = { 0 };
 
-  /* USER CODE BEGIN TIM11_Init 1 */
+	/* USER CODE BEGIN TIM11_Init 1 */
 
-  /* USER CODE END TIM11_Init 1 */
-  htim11.Instance = TIM11;
-  htim11.Init.Prescaler = 7200-1;
-  htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim11.Init.Period = 10000-1;
-  htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_OC_Init(&htim11) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_TIMING;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_OC_ConfigChannel(&htim11, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM11_Init 2 */
+	/* USER CODE END TIM11_Init 1 */
+	htim11.Instance = TIM11;
+	htim11.Init.Prescaler = 7200 - 1;
+	htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim11.Init.Period = 10000 - 1;
+	htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_Base_Init(&htim11) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_TIM_OC_Init(&htim11) != HAL_OK) {
+		Error_Handler();
+	}
+	sConfigOC.OCMode = TIM_OCMODE_TIMING;
+	sConfigOC.Pulse = 0;
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	if (HAL_TIM_OC_ConfigChannel(&htim11, &sConfigOC, TIM_CHANNEL_1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN TIM11_Init 2 */
 
-  /* USER CODE END TIM11_Init 2 */
+	/* USER CODE END TIM11_Init 2 */
 
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USART2_UART_Init(void) {
 
-  /* USER CODE BEGIN USART2_Init 0 */
+	/* USER CODE BEGIN USART2_Init 0 */
 
-  /* USER CODE END USART2_Init 0 */
+	/* USER CODE END USART2_Init 0 */
 
-  /* USER CODE BEGIN USART2_Init 1 */
+	/* USER CODE BEGIN USART2_Init 1 */
 
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
+	/* USER CODE END USART2_Init 1 */
+	huart2.Instance = USART2;
+	huart2.Init.BaudRate = 115200;
+	huart2.Init.WordLength = UART_WORDLENGTH_8B;
+	huart2.Init.StopBits = UART_STOPBITS_1;
+	huart2.Init.Parity = UART_PARITY_NONE;
+	huart2.Init.Mode = UART_MODE_TX_RX;
+	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+	if (HAL_UART_Init(&huart2) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN USART2_Init 2 */
 
-  /* USER CODE END USART2_Init 2 */
+	/* USER CODE END USART2_Init 2 */
 
 }
 
 /**
-  * @brief USB_OTG_FS Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USB_OTG_FS_PCD_Init(void)
-{
+ * @brief USB_OTG_FS Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USB_OTG_FS_PCD_Init(void) {
 
-  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+	/* USER CODE BEGIN USB_OTG_FS_Init 0 */
 
-  /* USER CODE END USB_OTG_FS_Init 0 */
+	/* USER CODE END USB_OTG_FS_Init 0 */
 
-  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+	/* USER CODE BEGIN USB_OTG_FS_Init 1 */
 
-  /* USER CODE END USB_OTG_FS_Init 1 */
-  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
-  hpcd_USB_OTG_FS.Init.dev_endpoints = 4;
-  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+	/* USER CODE END USB_OTG_FS_Init 1 */
+	hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
+	hpcd_USB_OTG_FS.Init.dev_endpoints = 4;
+	hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
+	hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
+	hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
+	hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
+	hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
+	hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
+	hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
+	hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
+	if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN USB_OTG_FS_Init 2 */
 
-  /* USER CODE END USB_OTG_FS_Init 2 */
+	/* USER CODE END USB_OTG_FS_Init 2 */
 
 }
 
 /**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
+ * Enable DMA controller clock
+ */
+static void MX_DMA_Init(void) {
 
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-  __HAL_RCC_DMA2_CLK_ENABLE();
+	/* DMA controller clock enable */
+	__HAL_RCC_DMA1_CLK_ENABLE();
+	__HAL_RCC_DMA2_CLK_ENABLE();
 
-  /* DMA interrupt init */
-  /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
-  /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
-  /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
-  /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+	/* DMA interrupt init */
+	/* DMA1_Stream5_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+	/* DMA1_Stream6_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+	/* DMA2_Stream3_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+	/* DMA2_Stream6_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_GPIO_Init(void) {
+	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+	/* USER CODE BEGIN MX_GPIO_Init_1 */
 
-  /* USER CODE END MX_GPIO_Init_1 */
+	/* USER CODE END MX_GPIO_Init_1 */
 
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+	/* GPIO Ports Clock Enable */
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+	__HAL_RCC_GPIOH_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+	/*Configure GPIO pin : B1_Pin */
+	GPIO_InitStruct.Pin = B1_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+	/*Configure GPIO pin : LD2_Pin */
+	GPIO_InitStruct.Pin = LD2_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	/* EXTI interrupt init*/
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
+	/* USER CODE BEGIN MX_GPIO_Init_2 */
 
-  /* USER CODE END MX_GPIO_Init_2 */
+	/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -497,18 +466,16 @@ static void MX_GPIO_Init(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
+	/* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
 /**
