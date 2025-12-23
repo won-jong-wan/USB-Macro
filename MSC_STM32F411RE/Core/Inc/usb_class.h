@@ -11,9 +11,6 @@
 #include <main.h>
 #include <tusb.h>
 
-#define DISK_BLOCK_NUM   128
-#define DISK_BLOCK_SIZE  512
-
 #define ROOT_DIR_LBA    3    // 루트 디렉토리 시작 위치
 #define MAX_ROOT_SECTORS 1   // 루트 디렉토리 크기 (Entry 개수/16)
 #define DATA_START_LBA  4   // 실제 데이터 시작 위치 (루트 끝난 다음)
@@ -25,6 +22,19 @@
 #ifndef SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL
 #define SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL 0x1E
 #endif
+
+#define PACK_INFO(ver, type, isEnd) \
+    ((((ver) & 0xF) << 4) | (((type) & 0x1) << 3) | (((isEnd) & 0x1) << 2))
+
+// 값을 꺼낼 때
+#define GET_VER(info)   (((info) >> 4) & 0xF)
+#define GET_TYPE(info)  (((info) >> 3) & 0x1)
+#define GET_END(info)   (((info) >> 2) & 0x1)
+
+// 3. 버퍼 설정 (32KB 단위 전송)
+#define CHUNK_SIZE_KB 32
+#define PACKET_COUNT  (CHUNK_SIZE_KB * 1024 / sizeof(datapacket)) // 128개
+#define SD_BLOCKS     (CHUNK_SIZE_KB * 1024 / 512)                // 64 blocks
 
 // 1바이트 정렬 (Packed) 필수!
 #pragma pack(push, 1)
@@ -45,8 +55,14 @@ typedef struct {
 } fat_dir_entry_t;
 #pragma pack(pop)
 
+typedef enum {
+  SD_STATE_READY,   // 대기 상태 (명령 가능)
+  SD_STATE_BUSY_TX, // 쓰기 중
+  SD_STATE_BUSY_RX, // 읽기 중
+  SD_STATE_ERROR    // 에러 발생
+} SD_AsyncState;
+
 // 실제 디스크 역할을 할 메모리 배열
-extern uint8_t msc_disk[DISK_BLOCK_NUM][DISK_BLOCK_SIZE];
 extern UART_HandleTypeDef huart2;
 
 void init_disk_data(void);
@@ -54,5 +70,11 @@ void check_usb_file_smart(void);
 
 void hid_task(void);
 //void vendor_task(void);
+
+int SD_Write_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks);
+int SD_Read_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks);
+void SD_test(void);
+
+void Process_SD_Write_Request(void);
 
 #endif /* INC_USB_CLASS_H_ */

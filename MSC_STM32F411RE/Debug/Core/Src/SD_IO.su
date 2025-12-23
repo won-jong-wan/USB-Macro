@@ -1,0 +1,5 @@
+../Core/Src/SD_IO.c:36:6:HAL_SD_TxCpltCallback	16	static
+../Core/Src/SD_IO.c:40:6:HAL_SD_RxCpltCallback	16	static
+../Core/Src/SD_IO.c:44:6:HAL_SD_ErrorCallback	16	static
+../Core/Src/SD_IO.c:55:5:SD_Write_DMA_Async	24	static
+../Core/Src/SD_IO.c:71:5:SD_Read_DMA_Async	24	static

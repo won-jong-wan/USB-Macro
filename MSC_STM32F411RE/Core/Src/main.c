@@ -192,29 +192,15 @@ int main(void)
   MX_TIM11_Init();
   MX_SDIO_SD_Init();
   /* USER CODE BEGIN 2 */
-//  	printf("Wiping Sector 0...\r\n");
-//
-//    uint8_t zero_buf[512] = {0}; // 0으로 가득 찬 버퍼
-//
-//    // SD카드 준비 대기
-//    while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) { HAL_Delay(10); }
-//
-//    // 0번지 덮어쓰기
-//    if (HAL_SD_WriteBlocks(&hsd, zero_buf, 0, 1, 1000) == HAL_OK) {
-//        printf("Wipe Success! Windows will see this as a NEW drive.\r\n");
-//        // 확실한 적용을 위해 잠시 대기
-//        while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
-//    } else {
-//        printf("Wipe Failed!\r\n");
-//    }
-	tusb_init();
+  init_disk_data();
+  tusb_init();
 
-	// 타이머 시작 등...
-	HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
-	g_usb_mode = USB_MODE_MSC_VENDOR;
-	__HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
-	HAL_UART_Transmit_DMA(&huart2, (uint8_t*)"UART OK\n", 9);
-
+  // 타이머 시작 등...
+  HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
+  g_usb_mode = USB_MODE_MSC_VENDOR;
+  __HAL_TIM_SET_AUTORELOAD(&htim11, linux_arr);
+  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)"UART OK\n", 9);
+//  SD_test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -229,6 +215,7 @@ int main(void)
 				cdc_task();
 				break;
 			case USB_MODE_MSC_VENDOR:
+				Process_SD_Write_Request();
 //				check_usb_file_smart();
 				break;
 			case USB_MODE_HID_MSC:
@@ -308,8 +295,12 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 8;
+  hsd.Init.ClockDiv = 0;
   if (HAL_SD_Init(&hsd) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK)
   {
     Error_Handler();
   }
