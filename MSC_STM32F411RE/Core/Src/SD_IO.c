@@ -20,6 +20,7 @@
                                          // 128 * 512 = 64kb // STM32F411RE MAX RAM = 128kb
 extern SD_HandleTypeDef hsd;
 extern UART_HandleTypeDef huart2;
+extern TIM_HandleTypeDef htim10; // 시간 측정용
 
 uint32_t g_sd_block_nbr;
 
@@ -35,8 +36,6 @@ volatile task_q_t task_q;
 uint8_t g_msc2sd_buffer;
 uint8_t g_vendor2sd_buffer;
 uint8_t sd_buffer[BUFFER_SIZE]__attribute__((aligned(4))); // DMA 최적화
-
-static uint32_t time = 0; // 속도는 결국 버퍼의 문제
 
 void SD_Init(void){
 	HAL_SD_CardInfoTypeDef pCardInfo;
@@ -56,6 +55,7 @@ void SD_Buffer_Reset(void){
 void SD_Test(void){
 	SD_Buffer_Reset();
 
+	// struct reset
 	venpack_t test_pack;
 	test_pack.magic = 0xBEEFCAFE;
 	test_pack.info = 0x1C;
@@ -63,34 +63,40 @@ void SD_Test(void){
 	test_pack.cmd_len = strlen(com);
 	memcpy(test_pack.command, com, test_pack.cmd_len );
 
+	// write
 	memcpy(sd_buffer, &test_pack, VENPACK_SIZE);
 	printf("[Write] %s \n", test_pack.command);
-	time = HAL_GetTick();
-	SD_Write_DMA_Async(g_vendor_start_address, sd_buffer, 1);
+	__HAL_TIM_SET_COUNTER(&htim10, 0);
+	SD_Write_DMA_Async(g_vendor_start_address, sd_buffer, 32);
 
+	// wait
 	while(g_sd_state != SD_STATE_READY){} // 유사 동기
-	printf("Write time: %ld \n", HAL_GetTick() - time);
+	printf("Write time: %ldus \n", __HAL_TIM_GET_COUNTER(&htim10));
 
+	// buffer reset
 	SD_Buffer_Reset();
-	printf("[BefRead] %s\n", sd_buffer);
-	time = HAL_GetTick();
-	SD_Read_DMA_Async(g_vendor_start_address, sd_buffer, 1);
 
+	// read
+	__HAL_TIM_SET_COUNTER(&htim10, 0);
+	SD_Read_DMA_Async(g_vendor_start_address, sd_buffer, 32);
+
+	// wait
 	while(g_sd_state != SD_STATE_READY){}
 
+
 	venpack_t* read_pack = (venpack_t*)sd_buffer;
+	printf("Read time: %ldus \n", __HAL_TIM_GET_COUNTER(&htim10));
 	printf("[Read] %s \n", read_pack->command);
-	printf("Read time: %ld \n", HAL_GetTick() - time);
 }
 
 void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
 	g_sd_state = SD_STATE_READY; // 쓰기 완료 -> 대기 상태로 복귀
-	printf("[Tx]\n");
+//	printf("[Tx]\n");
 }
 
 void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd) {
 	g_sd_state = SD_STATE_READY; // 읽기 완료 -> 대기 상태로 복귀
-	printf("[Rx]\n");
+//	printf("[Rx]\n");
 }
 
 void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd) {
