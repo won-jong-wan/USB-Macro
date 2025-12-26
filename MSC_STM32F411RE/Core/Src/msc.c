@@ -6,12 +6,98 @@
  */
 #include <main.h>
 #include <buffer_event.h>
+#include <tusb.h>
 
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 
-#define RAM_MSC
+//#define RAM_MSC
+
+#ifndef SCSI_CMD_MODE_SENSE_10
+#define SCSI_CMD_MODE_SENSE_10    0x5A
+#endif
+
+#ifndef RAM_MSC
+
+extern SD_HandleTypeDef hsd;
+
+#define MSC_PUBLIC_SIZE_BLOCKS  g_sd_block_nbr/2
+
+// 현재 선에 끼는 노이즈 문제 때문에 20분주로 동작함
+// 이후 납땜하고 신호가 좀 더 안정적으로 바뀌면 분주를 낮춰서 좀 더 안정적으로 바꿀 수 있을듯
+
+// 1. Inquiry
+void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4])
+{
+  (void) lun;
+  memcpy(vendor_id,  "STM32   ", 8);
+  memcpy(product_id, "Hybrid Storage  ", 16);
+  memcpy(product_rev, "1.0 ", 4);
+}
+
+// 2. Ready Check
+bool tud_msc_test_unit_ready_cb(uint8_t lun)
+{
+  (void) lun;
+  return (HAL_SD_GetCardState(&hsd) == HAL_SD_CARD_TRANSFER);
+}
+
+// 3. Capacity
+void tud_msc_capacity_cb(uint8_t lun, uint32_t* block_count, uint16_t* block_size)
+{
+  (void) lun;
+
+  *block_count = MSC_PUBLIC_SIZE_BLOCKS; // 16GB까지 일단 가능하지만 꽂았을때 로딩이 엄청 걸려서 4GB 정도로 둠
+  *block_size  = BLOCK_SIZE;
+}
+
+// 4. Read (PC 요청 처리)
+int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize)
+{
+  // PC가 허용 범위를 넘으려 하면 차단
+  if (lba >= MSC_PUBLIC_SIZE_BLOCKS) return -1;
+
+  uint32_t block_cnt = bufsize / 512;
+
+  printf("rx: %ld\n", bufsize);
+  SD_Read_DMA_Async(lba, buffer, block_cnt);
+
+  return bufsize;
+}
+
+// 5. Write (PC 요청 처리)
+int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize)
+{
+  // PC가 허용 범위를 넘으려 하면 차단
+  if (lba >= MSC_PUBLIC_SIZE_BLOCKS) return -1;
+
+  uint32_t block_cnt = bufsize / 512;
+
+  printf("tx: %ld\n", bufsize);
+  SD_Write_DMA_Async(lba, buffer, block_cnt);
+
+  return bufsize;
+}
+
+// 6. SCSI (기존 유지)
+int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize) {
+    void const* response = NULL;
+    int32_t resplen = 0;
+    switch (scsi_cmd[0]) {
+        case 0x1E: return 0;
+        case 0x1A: { static uint8_t d[] = {0x03,0,0,0}; response = d; resplen=4; break; }
+        case 0x5A: { static uint8_t d[] = {0,6,0,0,0,0,0,0}; response = d; resplen=8; break; }
+        default: return -1;
+    }
+    if (response && resplen > 0) {
+        if (resplen > bufsize) resplen = bufsize;
+        memcpy(buffer, response, resplen);
+    }
+    return resplen;
+}
+
+#endif
 
 #ifdef RAM_MSC
 
@@ -21,10 +107,6 @@
 
 #ifndef SCSI_CMD_MODE_SENSE_6
 #define SCSI_CMD_MODE_SENSE_6    0x1A
-#endif
-
-#ifndef SCSI_CMD_MODE_SENSE_10
-#define SCSI_CMD_MODE_SENSE_10    0x5A
 #endif
 
 #ifndef SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL

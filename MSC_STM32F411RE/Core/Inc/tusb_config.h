@@ -25,7 +25,7 @@
 #define CFG_TUD_VENDOR            1
 
 // --- 버퍼 설정 ---
-#define CFG_TUD_MSC_EP_BUFSIZE    4096
+#define CFG_TUD_MSC_EP_BUFSIZE    512*64 // 32kb*2
 #define CFG_TUD_HID_EP_BUFSIZE    16
 #define CFG_TUD_VENDOR_RX_BUFSIZE 0
 #define CFG_TUD_VENDOR_TX_BUFSIZE 512

@@ -20,7 +20,7 @@
 #define MB KB*KB
 #define GB KB*KB*KB
 
-#define MAX_BLOCK 64 // 64 ~ 256이 최적
+#define MAX_BLOCK 1 // 64 ~ 256이 최적
 #define BLOCK_SIZE 512
 
 #define BUFFER_SIZE MAX_BLOCK*BLOCK_SIZE // 64 * 512 = 32kb

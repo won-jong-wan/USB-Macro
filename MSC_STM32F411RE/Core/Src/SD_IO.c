@@ -4,9 +4,9 @@
  *  Created on: Dec 23, 2025
  *      Author: jonwo
  */
-
 #include <main.h>
 #include <buffer_event.h>
+#include <tusb.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -76,17 +76,11 @@ void SD_Test(void) {
 	printf("[Write] %s \n", test_pack.command);
 	SD_Write_DMA_Async(g_vendor_start_address, g_sd_buffer, test_block_size);
 
-//	// wait
-//	SD_Check_State();
-
 	// buffer reset
 	SD_Buffer_Reset();
 
 	// read
 	SD_Read_DMA_Async(g_vendor_start_address, g_sd_buffer, test_block_size);
-
-//	// wait
-//	SD_Check_State();
 
 	venpack_t *read_pack = (venpack_t*) g_sd_buffer;
 	printf("[Read] %s \n", read_pack->command);
@@ -104,7 +98,7 @@ void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd) {
 
 void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd) {
 	g_sd_state = SD_STATE_ERROR; // 에러 발생
-	printf("[Err]\n");
+	printf("[Err] Code: %ld, State: %d\n", hsd->ErrorCode, hsd->State);
 }
 
 int SD_Check_Card_State(void) { // SD 카드 상태를 확인하는 시간 약 10us
@@ -115,6 +109,7 @@ int SD_Check_Card_State(void) { // SD 카드 상태를 확인하는 시간 약 1
 #ifdef ASYNC
 		return g_sd_card_state;
 #endif // ASYNC
+//		tud_task();
 	} // 유사 동기
 #ifdef TIME_CHECK
 	printf("SD card wait: %ldus \n", __HAL_TIM_GET_COUNTER(&htim10));
@@ -131,6 +126,7 @@ int SD_Check_State(void) {
 #ifdef ASYNC
 		return g_sd_state;
 #endif // ASYNC
+//		tud_task();
 	} // 유사 동기
 #ifdef TIME_CHECK
 	printf("SD DMA wait: %ldus \n", __HAL_TIM_GET_COUNTER(&htim10));
@@ -140,7 +136,6 @@ int SD_Check_State(void) {
 
 int SD_Write_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks) {
 #ifndef FLAG_WAS_CHECKED
-//	SD_Check_State();
 	SD_Check_Card_State();
 #endif // FLAG_WAS_CHECKED
 
@@ -160,7 +155,6 @@ int SD_Write_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks) {
 
 int SD_Read_DMA_Async(uint32_t lba, uint8_t *buf, uint32_t nblocks) {
 #ifndef FLAG_WAS_CHECKED
-//	SD_Check_State();
 	SD_Check_Card_State();
 #endif // FLAG_WAS_CHECKED
 

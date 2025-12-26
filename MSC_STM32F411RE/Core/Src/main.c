@@ -237,9 +237,10 @@ int main(void)
   MX_SDIO_SD_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
+	SD_Init();
 #ifndef WITHOUT_TUD
 	tusb_init();
-	init_disk_data();
+//	init_disk_data();
 #endif // WITHOUT_TUD
 	HAL_TIM_OC_Start(&htim10, TIM_CHANNEL_1);
 	HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
@@ -247,8 +248,6 @@ int main(void)
 
 	g_usb_mode = USB_MODE_MSC_VENDOR;
 	__HAL_TIM_SET_AUTORELOAD(&htim11, LINUX_ARR);
-
-	SD_Init();
 //	SD_Test();
   /* USER CODE END 2 */
 
@@ -345,7 +344,7 @@ static void MX_SDIO_SD_Init(void)
   hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
   hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
   hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd.Init.ClockDiv = 0;
+  hsd.Init.ClockDiv = 20;
   if (HAL_SD_Init(&hsd) != HAL_OK)
   {
     Error_Handler();
@@ -536,10 +535,10 @@ static void MX_DMA_Init(void)
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
   /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 4);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 5);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }

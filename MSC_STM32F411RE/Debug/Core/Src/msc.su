@@ -1,8 +1,6 @@
-../Core/Src/msc.c:42:6:init_disk_data	160	static
-../Core/Src/msc.c:125:6:check_usb_file_smart	40	static
-../Core/Src/msc.c:186:6:tud_msc_inquiry_cb	24	static
-../Core/Src/msc.c:195:6:tud_msc_test_unit_ready_cb	16	static
-../Core/Src/msc.c:198:6:tud_msc_capacity_cb	24	static
-../Core/Src/msc.c:206:9:tud_msc_read10_cb	40	static
-../Core/Src/msc.c:225:9:tud_msc_write10_cb	40	static
-../Core/Src/msc.c:241:9:tud_msc_scsi_cb	32	static
+../Core/Src/msc.c:28:6:tud_msc_inquiry_cb	24	static
+../Core/Src/msc.c:37:6:tud_msc_test_unit_ready_cb	16	static
+../Core/Src/msc.c:44:6:tud_msc_capacity_cb	24	static
+../Core/Src/msc.c:53:9:tud_msc_read10_cb	32	static
+../Core/Src/msc.c:67:9:tud_msc_write10_cb	32	static
+../Core/Src/msc.c:81:9:tud_msc_scsi_cb	32	static
