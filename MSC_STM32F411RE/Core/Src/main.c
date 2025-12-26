@@ -80,6 +80,7 @@ static void MX_TIM11_Init(void);
 static void MX_SDIO_SD_Init(void);
 static void MX_TIM10_Init(void);
 /* USER CODE BEGIN PFP */
+extern void init_disk_data();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -138,6 +139,66 @@ void cdc_task(void) {
 		}
 	}
 }
+
+void Test_func(void){
+	printf("This is test_func\n");
+
+	ven_send();
+	return;
+}
+
+// full or half -> callback -> buffer fill twice
+#define BUF_SIZE 512
+
+uint8_t is_fulled = 0;
+uint8_t is_halfed = 0;
+
+uint8_t recv_buf[BUF_SIZE] = {0};
+uint8_t recv_val[BUF_SIZE] = {0};
+uint16_t uart_h = 0;
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+    // Size는 buf 0부터 현재까지 수신된 데이터의 개수
+	if(!is_halfed && (Size == BUF_SIZE/2)){
+		is_halfed = 1;
+		return;
+	}
+
+	if(!is_fulled && (Size == BUF_SIZE)){
+		is_fulled = 1;
+		return;
+	}
+
+	is_halfed = 0;
+	is_fulled = 0;
+
+	memset(recv_val, 0, BUF_SIZE);
+	uint16_t tmp = 0;
+
+	printf("1: %d-%d %s\n", Size, uart_h, recv_val);
+
+	if(Size < uart_h){ // ring buffer overwrite
+		while(uart_h < BUF_SIZE){
+			recv_val[tmp++] = recv_buf[uart_h++];
+		}
+		uart_h = 0;
+	}
+
+	while(uart_h < Size){
+		recv_val[tmp++] = recv_buf[uart_h++];
+	}
+	recv_val[tmp] = '\0';
+
+	printf("2: %d-%d %s\n", Size, uart_h, recv_val);
+}
+
+void test_watchdog(void){
+	if(recv_val[0] == 't'){
+		Test_func();
+		recv_val[0] = '\0';
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -178,18 +239,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
 #ifndef WITHOUT_TUD
 	tusb_init();
+	init_disk_data();
 #endif // WITHOUT_TUD
 	HAL_TIM_OC_Start(&htim10, TIM_CHANNEL_1);
-
-	SD_Init();
-	SD_Test();
-
 	HAL_TIM_OC_Start_IT(&htim11, TIM_CHANNEL_1);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart2, recv_buf, BUF_SIZE);
 
 	g_usb_mode = USB_MODE_MSC_VENDOR;
 	__HAL_TIM_SET_AUTORELOAD(&htim11, LINUX_ARR);
 
-	printf("USART OK!\n");
+	SD_Init();
+//	SD_Test();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -199,6 +259,7 @@ int main(void)
 		tud_task();
 #endif // WITHOUT_TUD
 		mod_change_watchdog();
+		test_watchdog();
 
 		switch (g_usb_mode) {
 		case USB_MODE_CDC:
@@ -540,6 +601,7 @@ void Error_Handler(void)
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1) {
+		printf("in error handler\n");
 	}
   /* USER CODE END Error_Handler_Debug */
 }

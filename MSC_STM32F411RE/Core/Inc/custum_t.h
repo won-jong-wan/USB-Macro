@@ -8,6 +8,9 @@
 #ifndef INC_CUSTUM_T_H_
 #define INC_CUSTUM_T_H_
 
+// ------------- include
+#include <stdio.h>
+
 // ------------- MSC
 //#define MSCPACK_SIZE 256
 
@@ -70,5 +73,15 @@ typedef enum {
 	SD_STATE_BUSY_RX, // 읽기 중
 	SD_STATE_ERROR    // 에러 발생
 } sd_state_t;
+
+// ------------- inline func
+
+static inline void print_venpack(venpack_t* pkt){
+    printf("\r\n--- Packet Received ---\r\n");
+	printf("[RX] Magic: 0x%08lX\r\n", pkt->magic);
+	printf("[RX] Info : 0x%02X\r\n", pkt->info);
+	printf("[RX] Cmd  : %s\r\n", pkt->command);
+	printf("-----------------------\r\n");
+}
 
 #endif /* INC_CUSTUM_T_H_ */

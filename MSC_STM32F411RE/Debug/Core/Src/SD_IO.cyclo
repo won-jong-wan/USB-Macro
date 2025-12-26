@@ -1,8 +1,10 @@
-../Core/Src/sd_io.c:40:6:SD_Init	1
+../Core/Src/sd_io.c:35:6:SD_Init	1
 ../Core/Src/sd_io.c:51:6:SD_Buffer_Reset	1
-../Core/Src/sd_io.c:55:6:SD_Test	3
-../Core/Src/sd_io.c:92:6:HAL_SD_TxCpltCallback	1
-../Core/Src/sd_io.c:97:6:HAL_SD_RxCpltCallback	1
-../Core/Src/sd_io.c:102:6:HAL_SD_ErrorCallback	1
-../Core/Src/sd_io.c:107:5:SD_Write_DMA_Async	4
-../Core/Src/sd_io.c:122:5:SD_Read_DMA_Async	4
+../Core/Src/sd_io.c:61:6:SD_Test	1
+../Core/Src/sd_io.c:95:6:HAL_SD_TxCpltCallback	1
+../Core/Src/sd_io.c:100:6:HAL_SD_RxCpltCallback	1
+../Core/Src/sd_io.c:105:6:HAL_SD_ErrorCallback	1
+../Core/Src/sd_io.c:110:5:SD_Check_Card_State	2
+../Core/Src/sd_io.c:126:5:SD_Check_State	2
+../Core/Src/sd_io.c:141:5:SD_Write_DMA_Async	2
+../Core/Src/sd_io.c:161:5:SD_Read_DMA_Async	2
