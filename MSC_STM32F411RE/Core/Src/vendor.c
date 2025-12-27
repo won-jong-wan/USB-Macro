@@ -103,6 +103,6 @@ void ven_send(void) {
 	}
 
 	g_ven_header = g_vendor_start_address+1;
-	vendor_info_update(0);
+//	vendor_info_update(0);
 }
 
