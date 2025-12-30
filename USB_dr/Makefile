@@ -1,5 +1,5 @@
 APP = app
-MOD = dev
+MOD = dev_struct
 OBJ = $(APP).o
 obj-m = $(MOD).o
 
