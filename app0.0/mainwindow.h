@@ -7,7 +7,7 @@
 #include <QKeyEvent> // 상단에 추가
 #include <QDebug>
 #include "won_device_api.h"
-
+#include "dialog.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -34,8 +34,14 @@ private slots:
     void on_pushButton_3_clicked();
 
 
+    void on_downloadBtn_clicked();
+
 protected:
     void keyPressEvent(QKeyEvent *event) override; // 키보드 이벤트 재정의
+
+protected:
+    // 기존 keyPressEvent 대신 이걸로 처리합니다.
+    //bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     Ui::MainWindow *ui;

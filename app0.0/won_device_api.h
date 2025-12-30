@@ -3,6 +3,7 @@
 
 #include <string>
 #include <QDebug>
+#include <QMessageBox>
 extern "C" {
 #include <stdint.h>
 #include <fcntl.h>

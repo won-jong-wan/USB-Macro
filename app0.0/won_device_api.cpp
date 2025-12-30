@@ -15,16 +15,16 @@ datapacket createPacket(uint8_t version, uint8_t type, bool start, bool isEnd, c
 
     // 2. Magic Number 설정
     // 필요 시 htonl() 등으로 엔디안 변환 고려 가능
-    packet.magic = 0xCAFE4000;
+    packet.magic = 0xDEADBEEF;
 
     // 3. Info 바이트 구성 (비트 필드)
     // [7:4] version, [3] reserved, [2] start, [1] isEnd, [0] type
     uint8_t info = 0;
     info |= (version & 0x0F) << 4;
-    info |= (0 & 0x01) << 3;       // Reserved
+    info |= ((type == 'D') & 0x01) << 3;       // Reserved
     info |= (start ? 1 : 0) << 2;
     info |= (isEnd ? 1 : 0) << 1;
-    info |= ((type == 'S') & 0x01) << 0;
+    info |= ((type == 'S' || type == 'D') & 0x01) << 0;
     packet.info = info;
 
     // 4. 커맨드 길이 계산 및 안전한 복사
@@ -44,10 +44,13 @@ datapacket createPacket(uint8_t version, uint8_t type, bool start, bool isEnd, c
 
 
 void printPacket(const datapacket& packet) {
-    // 1. 비트 필드 데이터 추출
+    // 1. 비트 필드 데이터 추출   delay | start | is_end | ttpe
     uint8_t version = (packet.info >> 4) & 0x0F; // 상위 4비트
-    uint8_t type    = (packet.info >> 3) & 0x01; // 3번 비트
-    bool isEnd      = (packet.info >> 2) & 0x01; // 2번 비트
+    bool delay      = (packet.info >> 3) & 0x01; // 4번 비트
+    bool start      = (packet.info >> 2) & 0x01; // 3번 비트
+    bool isEnd      = (packet.info >> 1) & 0x01; // 2번 비트
+    bool type    = (packet.info) & 0x01; // 1번 비트
+
     // 하위 2비트는 ZERO (예약 영역)
 
     // 2. 출력 포맷 구성
@@ -62,9 +65,10 @@ void printPacket(const datapacket& packet) {
                                        .arg(packet.info, 2, 16, QChar('0')).toUpper()
                                        .arg(QString::number(packet.info, 2).rightJustified(8, '0'));
     qDebug() << "    └─ Version :" << version;
+    qDebug() << "    └─ delay    :" << (delay ? "YES (delay type)" : "NO");
+    qDebug() << "    └─ start   :" << (start ? "YES (start Packet)" : "NO");
+    qDebug() << "    └─ isEnd   :" << (isEnd ? "YES (Final Packet)" : "NO");
     qDebug() << "    └─ Type    :" << (type ? "S" : "C");
-    qDebug() << "    └─ isEnd   :" << (isEnd ? "YES (Final Packet)" : "NO (More to follow)");
-
     // Command 정보
     qDebug() << "  - Length  :" << packet.cmd_len << "bytes";
 
