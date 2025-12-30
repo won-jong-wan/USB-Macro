@@ -1,0 +1,35 @@
+[33mcommit fb6ef18e661983252518c5098691b867e5a8add6[m[33m ([m[1;36mHEAD -> [m[1;32mdaemon-dev[m[33m)[m
+Author: hwan <hwan5778421@gmail.com>
+Date:   Tue Dec 23 17:11:23 2025 +0900
+
+    Service Daemon One Command #37
+
+[33mcommit 9298325664341ee06bd4b8f849787f8cd40c317a[m[33m ([m[1;31morigin/daemon-dev[m[33m)[m
+Author: hwan <hwan5778421@gmail.com>
+Date:   Mon Dec 22 10:19:35 2025 +0900
+
+    daemon #37
+
+[33mcommit 67a1bffb1c6fcb189ac16f069b3842d2b4e856ff[m
+Author: hwan <hwan5778421@gmail.com>
+Date:   Wed Dec 17 22:04:43 2025 +0900
+
+    daemon base #37
+
+[33mcommit 5960ded6ac68491389df2125352d283fd505c76f[m
+Author: hwan <hwan5778421@gmail.com>
+Date:   Wed Dec 17 17:58:09 2025 +0900
+
+    daemon base #37
+
+[33mcommit 6018aa0685a259d9d76193783d8339f7b37952dc[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Author: won <jonwon2009@naver.com>
+Date:   Wed Dec 3 10:18:31 2025 +0900
+
+    Update README.md
+
+[33mcommit 84f1660330557e2eba7b869d302ad85a1d7081bc[m
+Author: won <jonwon2009@naver.com>
+Date:   Fri Nov 21 09:28:22 2025 +0900
+
+    Initial commit
