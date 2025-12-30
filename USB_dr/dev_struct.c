@@ -18,7 +18,7 @@
 
 #define DRIVER_NAME    "team_own_stm32"
 #define DEVICE_NAME    "team_own_stm32"
-#define MAX_PKT_SIZE   256    // FS Bulk max 64바이트 (필요하면 lsusb로 확인해서 맞추기)
+#define MAX_FRAME_SIZE (DP_HDR_SIZE + DP_MAX_PAYLOAD)
 #define RX_FIFO_SIZE 8192
 
 // ---------- USB 매칭 테이블 ----------
@@ -93,8 +93,8 @@ static ssize_t stm32_usb_write(struct file *file,
     if (!count)
         return 0;
 
-    if (count > MAX_PKT_SIZE)
-        count = MAX_PKT_SIZE;
+    if (count > MAX_FRAME_SIZE)
+        return -EMSGSIZE;
 
     urb = usb_alloc_urb(0, GFP_KERNEL);
     if (!urb)
