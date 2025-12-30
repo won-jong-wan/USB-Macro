@@ -4,9 +4,9 @@
 #include <linux/types.h>
 #include <linux/byteorder/generic.h>
 
-#define DP_MAGIC        0x12345678u
-#define DP_HDR_SIZE     7
-#define DP_MAX_PAYLOAD  200
+#define DP_MAGIC        0xDEADBEEF
+#define DP_HDR_SIZE     (sizeof(struct dp_hdr_wire))
+#define DP_MAX_PAYLOAD  249
 
 /* info: [7:4]=version(4bit), [3]=type(1bit), [2]=is_end(1bit), [1:0]=0 */
 #define DP_INFO_VER_SHIFT 4

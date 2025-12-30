@@ -13,15 +13,15 @@
 #include <linux/byteorder/generic.h>
 #include "usb_struct.h"
 
-#define USB_VENDOR_ID  0xCAFE
-#define USB_PRODUCT_ID 0x4000
+#define USB_VENDOR_ID  0xDEAD
+#define USB_PRODUCT_ID 0xBEEF
 
 #define DRIVER_NAME    "team_own_stm32"
 #define DEVICE_NAME    "team_own_stm32"
-#define MAX_PKT_SIZE   64    // FS Bulk max 64바이트 (필요하면 lsusb로 확인해서 맞추기)
-#define DP_MAGIC 0x12345678u
-#define DP_HDR_SIZE 7
-#define DP_MAX_PAYLOAD 200
+#define MAX_PKT_SIZE   256    // FS Bulk max 64바이트 (필요하면 lsusb로 확인해서 맞추기)
+#define DP_MAGIC 0xDEADBEEF
+#define DP_HDR_SIZE (sizeof(struct dp_hdr_wire))
+#define DP_MAX_PAYLOAD 249
 #define RX_FIFO_SIZE 8192
 
 // ---------- USB 매칭 테이블 ----------
@@ -420,6 +420,13 @@ static void stm32_bulk_in_callback(struct urb *urb)
 
     /* 정상 수신 */
     if (urb->actual_length > 0) {
+	pr_info(DRIVER_NAME ": RX %u bytes\n", urb->actual_length);
+	print_hex_dump(KERN_INFO,
+			DRIVER_NAME ": RX DATA: ",
+			DUMP_PREFIX_OFFSET,
+			16, 1,
+			urb->transfer_buffer,
+			urb->actual_length, false);
         spin_lock_irqsave(&dev->rx_lock, flags);
         in = kfifo_in(&dev->rx_fifo, urb->transfer_buffer, urb->actual_length);
         spin_unlock_irqrestore(&dev->rx_lock, flags);
@@ -447,7 +454,6 @@ resubmit:
         return;
     }
 }
-// 프레임 파서 
 static int try_pop_frame(struct stm32_usb_dev *dev, u8 *out, size_t out_sz, size_t *frame_len)
 {
     unsigned long flags;
@@ -457,7 +463,7 @@ static int try_pop_frame(struct stm32_usb_dev *dev, u8 *out, size_t out_sz, size
     u8 drop;
     unsigned int copied;
 
-    spin_lock_irqsave(&dev->rx_lock, flags);
+    spin_lock_irqsave(&dev->rx_lock, flags); // 락 잡기 인터럽트/URB 보호 
 
     if (kfifo_len(&dev->rx_fifo) < DP_HDR_SIZE)
         goto no_frame;
@@ -476,7 +482,7 @@ static int try_pop_frame(struct stm32_usb_dev *dev, u8 *out, size_t out_sz, size
         goto no_frame;
     }
 
-    /* cmd_len(bytes) */
+    /* cmd_len(bytes) payload 길이 검증 */
     len = le16_to_cpu(wh.cmd_len);
     if (len > DP_MAX_PAYLOAD) {
         copied = kfifo_out(&dev->rx_fifo, &drop, 1);
@@ -485,11 +491,12 @@ static int try_pop_frame(struct stm32_usb_dev *dev, u8 *out, size_t out_sz, size
         goto no_frame;
     }
 
-    need = DP_HDR_SIZE + len;
-
+    need = DP_HDR_SIZE + len; // 프레임 전체 크기 계산
+			      //
+    /*프레임이 전부 모였는지 확인  */ 
     if (kfifo_len(&dev->rx_fifo) < need)
-        goto no_frame;
-
+        goto no_frame; 
+    /*출력 버퍼 크기 확인 */
     if (out_sz < need) {
         spin_unlock_irqrestore(&dev->rx_lock, flags);
         return -EMSGSIZE;
