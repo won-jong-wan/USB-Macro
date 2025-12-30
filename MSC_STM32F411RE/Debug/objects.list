@@ -1,7 +1,7 @@
-"./Core/Src/SD_IO.o"
 "./Core/Src/hid.o"
 "./Core/Src/main.o"
 "./Core/Src/msc.o"
+"./Core/Src/sd_io.o"
 "./Core/Src/stm32f4xx_hal_msp.o"
 "./Core/Src/stm32f4xx_it.o"
 "./Core/Src/syscalls.o"

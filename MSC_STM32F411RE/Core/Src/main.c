@@ -148,7 +148,7 @@ void Test_func(void){
 }
 
 // full or half -> callback -> buffer fill twice
-#define BUF_SIZE 512
+#define BUF_SIZE 1024
 
 uint8_t is_fulled = 0;
 uint8_t is_halfed = 0;
@@ -191,6 +191,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	recv_val[tmp] = '\0';
 
 	printf("2: %d-%d %s\n", Size, uart_h, recv_val);
+	if(g_usb_mode == USB_MODE_CDC){
+		tud_cdc_write(recv_val, sizeof(recv_val));
+	}
 }
 
 void test_watchdog(void){

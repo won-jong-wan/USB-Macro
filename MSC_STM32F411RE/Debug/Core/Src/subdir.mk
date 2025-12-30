@@ -5,10 +5,10 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../Core/Src/SD_IO.c \
 ../Core/Src/hid.c \
 ../Core/Src/main.c \
 ../Core/Src/msc.c \
+../Core/Src/sd_io.c \
 ../Core/Src/stm32f4xx_hal_msp.c \
 ../Core/Src/stm32f4xx_it.c \
 ../Core/Src/syscalls.c \
@@ -18,10 +18,10 @@ C_SRCS += \
 ../Core/Src/vendor.c 
 
 OBJS += \
-./Core/Src/SD_IO.o \
 ./Core/Src/hid.o \
 ./Core/Src/main.o \
 ./Core/Src/msc.o \
+./Core/Src/sd_io.o \
 ./Core/Src/stm32f4xx_hal_msp.o \
 ./Core/Src/stm32f4xx_it.o \
 ./Core/Src/syscalls.o \
@@ -31,10 +31,10 @@ OBJS += \
 ./Core/Src/vendor.o 
 
 C_DEPS += \
-./Core/Src/SD_IO.d \
 ./Core/Src/hid.d \
 ./Core/Src/main.d \
 ./Core/Src/msc.d \
+./Core/Src/sd_io.d \
 ./Core/Src/stm32f4xx_hal_msp.d \
 ./Core/Src/stm32f4xx_it.d \
 ./Core/Src/syscalls.d \
@@ -51,7 +51,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/SD_IO.cyclo ./Core/Src/SD_IO.d ./Core/Src/SD_IO.o ./Core/Src/SD_IO.su ./Core/Src/hid.cyclo ./Core/Src/hid.d ./Core/Src/hid.o ./Core/Src/hid.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/msc.cyclo ./Core/Src/msc.d ./Core/Src/msc.o ./Core/Src/msc.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/usb_descriptors.cyclo ./Core/Src/usb_descriptors.d ./Core/Src/usb_descriptors.o ./Core/Src/usb_descriptors.su ./Core/Src/vendor.cyclo ./Core/Src/vendor.d ./Core/Src/vendor.o ./Core/Src/vendor.su
+	-$(RM) ./Core/Src/hid.cyclo ./Core/Src/hid.d ./Core/Src/hid.o ./Core/Src/hid.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/msc.cyclo ./Core/Src/msc.d ./Core/Src/msc.o ./Core/Src/msc.su ./Core/Src/sd_io.cyclo ./Core/Src/sd_io.d ./Core/Src/sd_io.o ./Core/Src/sd_io.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/usb_descriptors.cyclo ./Core/Src/usb_descriptors.d ./Core/Src/usb_descriptors.o ./Core/Src/usb_descriptors.su ./Core/Src/vendor.cyclo ./Core/Src/vendor.d ./Core/Src/vendor.o ./Core/Src/vendor.su
 
 .PHONY: clean-Core-2f-Src
 
