@@ -17,14 +17,15 @@
 #define BUFFER_SIZE 1024
 
 #define GET_VERSION(info) (((info) >> 4) & 0x0F) // 하위 4비트만 출력
-#define GET_TYPE(info) (((info) >> 3) & 0x01)    // 최하위 1비트만 출력
-#define GET_ISEND(info)                                                        \
-  (((info) >> 2) & 0x01) // 오른쪽으로 2번 시프트, 최하위 1비트 출력
+#define GET_DELAY(info) (((info) >> 3) & 0x01)
+#define GET_START(info) (((info) >> 2) & 0x01)   
+#define GET_ISEND(info) (((info) >> 1) & 0x01) // 오른쪽으로 2번 시프트, 최하위 1비트 출력
+#define GET_TYPE(info) ((info) & 0x01)    // 최하위 1비트만 출력
 
-#define SET_INFO(version, type, isEnd)                                         \
-  (((version) << 4) | ((type) << 3) | ((isEnd) << 2))
+//#define SET_INFO(version, start, isEnd, type) \
+  (((version) << 4) | ((start) << 2) | ((isEnd) << 1) | (type))
 
-#define MAGIC_NUMBER 0x12345678u
+#define MAGIC_NUMBER 0xDEADBEEF
 
 typedef struct {
   pid_t pid;
@@ -113,7 +114,24 @@ int execute_S_node(const char *command) {
   // unistd.h에 포함
 
   if (pid == 0) {
-    execlp("bash", "bash", "-c", command, NULL);
+    char full_cmd[1024];
+    
+    if(strncmp(command, "ros2 ", 5) == 0)
+    {
+      snprintf(full_cmd, sizeof(full_cmd), 
+             "source /opt/ros/humble/setup.bash && "
+             "source /home/burger/turtlebot3_ws/install/setup.bash && "
+             "export ROS_DOMAIN_ID=50 && "
+             "export LDS_MODEL=rplidar_c1 && "
+             "export TURTLEBOT3_MODEL=burger && "
+             "%s", 
+             command);
+    }
+    else
+    {
+      snprintf(full_cmd, sizeof(full_cmd), "%s", command);
+    }
+    execlp("bash", "bash", "-c", full_cmd, NULL);
     // execlp의 p는 PATH를 의미 → PATH에서 자동으로 찾음
     // 첫 번째 bash : PATH 환경변수에서 "bash" 프로그램 찾기
     // 두 번째 bash : 그냥 이름임
@@ -175,7 +193,23 @@ int execute_C_node(const char *command) {
 
     close(pipefd[0]);
 
-    execlp("bash", "bash", "-c", command, NULL);
+    char full_cmd[1024];
+    if(strncmp(command, "ros2 ", 5) == 0)
+    {
+      snprintf(full_cmd, sizeof(full_cmd), 
+             "source /opt/ros/humble/setup.bash && "
+             "source /home/burger/turtlebot3_ws/install/setup.bash && "
+             "export ROS_DOMAIN_ID=50 && "
+             "export LDS_MODEL=rplidar_c1 && "
+             "export TURTLEBOT3_MODEL=burger && "
+             "%s", 
+             command);
+    }
+    else
+    {
+      snprintf(full_cmd, sizeof(full_cmd), "%s", command);
+    } 
+    execlp("bash", "bash", "-c", full_cmd, NULL);
     perror("exec 실패");
     exit(1);
   } else if (pid > 0) {
@@ -238,14 +272,6 @@ void read_background_output() {
   }
 }
 
-// 전달받은 정보들을 패킷 구조체에 넣어주는 함수부분
-void create_packet(datapacket *pkt, uint8_t version, uint8_t type,
-                   uint8_t isEnd, const char *cmd) {
-  pkt->magic = MAGIC_NUMBER;
-  pkt->info = SET_INFO(version, type, isEnd);
-  pkt->cmd_len = strlen(cmd);
-  strncpy(pkt->command, cmd, 249);
-}
 // 손상이 있는지, 올바른지 확인하는 부분
 int validata_packet(datapacket *pkt) {
   if (pkt->magic != MAGIC_NUMBER) {
@@ -266,19 +292,32 @@ int process_packet(datapacket *pkt) {
   }
 
   uint8_t version = GET_VERSION(pkt->info);
-  uint8_t type = GET_TYPE(pkt->info);
+  uint8_t delay = GET_DELAY(pkt->info);
+  uint8_t start = GET_START(pkt->info);
   uint8_t isEnd = GET_ISEND(pkt->info);
+  uint8_t type = GET_TYPE(pkt->info);
 
   printf("패킷 정보\n");
   printf("  Magic   : 0x%X\n", pkt->magic);
   printf("  Version : %d\n", version);
-  printf("  Type    : %s\n", type ? "C노드" : "S노드");
+  printf("  Delay   : %s\n", dealy ? "지연" : "-");
+  printf("  Start   : %s\n", start ? "시작" : "-");
   printf("  IsEnd   : %s\n", isEnd ? "마지막 패킷" : "계속");
+  printf("  Type    : %s\n", type ? "S노드" : "C노드");
   printf("  Cmd Len : %d\n", pkt->cmd_len);
   printf("  Command : %s\n", pkt->command);
 
   int result;
-  if (type == 0) {
+
+  if(delay == 1)
+  {
+    int delay_seconds = atoi(pkt->command);
+    printf("[지연] %d초 대기 중...\n", delay_seconds);
+    sleep(delay_seconds);
+    printf("[지연] 완료");
+    return 0;
+  }
+  if (type == 1) {
     result = execute_S_node(pkt->command);
   } else {
     result = execute_C_node(pkt->command);
@@ -293,6 +332,8 @@ void user_process_loop(int pipe_fd)
   printf("    UID: %d (일반 사용자)\n", getuid());
   printf("════════════════════════════════════\n\n");
 
+  setenv("HOME", "/home/burger", 1);
+  
   int flags = fcntl(pipe_fd, F_GETFL, 0);
   fcntl(pipe_fd, F_SETFL, flags | O_NONBLOCK);
 
@@ -389,35 +430,11 @@ void distribute_commands(int user_fd, int root_fd, int user_log_fd, int root_log
     return;
   }
 
-  #ifdef GARA
-  create_packet(&packets[i++], 1, 0, 0, "sudo apt update");
-  create_packet(&packets[i++], 1, 1, 0, "ping localhost");
-  create_packet(&packets[i++], 1, 0, 0, "sudo apt upgrade");
-  create_packet(&packets[i++], 1, 1, 1, "while true; do date; sleep 1; done");
-  i = 0;
-  while (1) {
-    if (usb_write_packet(fd, &packets[i]) < 0) {
-      perror("write failed\n");
-      break;
-    }
-    packet_count++;
-    int isend = GET_ISEND(packets[i++].info);
-    printf("%d\n", isend);
-    if (isend)
-      break;
-  }
-
-  printf("********************************\n");
-  printf("**** tx packet_count %d   ****\n", packet_count);
-  printf("********************************\n");
-  packet_count = 0;
-
-#endif
   g_usb_fd = fd;
 
   i = 0;
   packet_count = 0;
-  // create_packet(&packets[0], version, type, isEnd, "명령어");
+
   while (1) {
     if (usb_read_packet(fd, &rx_packets[i]) < 0) {
       perror("read failed");
