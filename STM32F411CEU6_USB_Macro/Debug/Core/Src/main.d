@@ -57,8 +57,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/class/msc/msc_device.h \
  C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/class/msc/msc.h \
  C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/class/vendor/vendor_device.h \
- ../Core/Inc/buffer_event.h ../Core/Inc/custum_t.h ../Core/Inc/task_q.h \
- ../Core/Inc/oled.h ../Core/Inc/ui.h
+ ../Core/Inc/buffer_event.h ../Core/Inc/custum_t.h ../Core/Inc/oled.h \
+ ../Core/Inc/ui.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -120,6 +120,5 @@ C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/clas
 C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/class/vendor/vendor_device.h:
 ../Core/Inc/buffer_event.h:
 ../Core/Inc/custum_t.h:
-../Core/Inc/task_q.h:
 ../Core/Inc/oled.h:
 ../Core/Inc/ui.h:

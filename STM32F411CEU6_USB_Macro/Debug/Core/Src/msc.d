@@ -33,7 +33,7 @@ Core/Src/msc.o: ../Core/Src/msc.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h \
- ../Core/Inc/buffer_event.h ../Core/Inc/custum_t.h ../Core/Inc/task_q.h \
+ ../Core/Inc/buffer_event.h ../Core/Inc/custum_t.h \
  C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/tusb.h \
  C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/common/tusb_common.h \
  C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/tusb_option.h \
@@ -95,7 +95,6 @@ Core/Src/msc.o: ../Core/Src/msc.c ../Core/Inc/main.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h:
 ../Core/Inc/buffer_event.h:
 ../Core/Inc/custum_t.h:
-../Core/Inc/task_q.h:
 C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/tusb.h:
 C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/common/tusb_common.h:
 C:/Users/kccistc/Desktop/USB-Macro/STM32F411CEU6_USB_Macro/Libs/tinyusb/src/tusb_option.h:

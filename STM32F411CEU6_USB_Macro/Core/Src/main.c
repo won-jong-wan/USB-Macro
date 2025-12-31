@@ -185,6 +185,16 @@ void mod_change_watchdog() {
 	}
 }
 
+// full or half -> callback -> buffer fill twice
+#define BUF_SIZE 1024
+
+volatile uint8_t is_fulled = 0;
+volatile uint8_t is_halfed = 0;
+
+uint8_t recv_buf[BUF_SIZE] = { 0 };
+uint8_t recv_val[BUF_SIZE] = { 0 };
+volatile uint16_t uart_h = 0;
+
 void cdc_task(void) {
 	// 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
 	if (tud_cdc_connected()) {
@@ -197,23 +207,6 @@ void cdc_task(void) {
 		}
 	}
 }
-
-void Test_func(void) {
-	printf("This is test_func\n");
-
-	ven_send();
-	return;
-}
-
-// full or half -> callback -> buffer fill twice
-#define BUF_SIZE 1024
-
-uint8_t is_fulled = 0;
-uint8_t is_halfed = 0;
-
-uint8_t recv_buf[BUF_SIZE] = { 0 };
-uint8_t recv_val[BUF_SIZE] = { 0 };
-uint16_t uart_h = 0;
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 	// Size는 buf 0부터 현재까지 수신된 데이터의 개수
@@ -251,13 +244,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 	if (g_usb_mode == USB_MODE_CDC) {
 		tud_cdc_write(recv_val, sizeof(recv_val));
-	}
-}
-
-void test_watchdog(void) {
-	if (recv_val[0] == 't') {
-		Test_func();
-		recv_val[0] = '\0';
 	}
 }
 
@@ -352,7 +338,6 @@ int main(void) {
 		tud_task();
 #endif // WITHOUT_TUD
 		mod_change_watchdog();
-		test_watchdog();
 //		printf("encoder: %ld\n", __HAL_TIM_GET_COUNTER(&htim2));
 
 		if (__HAL_TIM_GET_COUNTER(&htim5) > 20) {
