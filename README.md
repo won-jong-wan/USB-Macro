@@ -37,7 +37,7 @@ flowchart TD
     STM32[STM32 USB Vendor]
     USB[USB Bulk IN OUT]
     CORE[Linux USB Core]
-    DRV[Kernel USB Driver<br/>team_own_stm32.ko]
+    DRV[Kernel USB Driver<br/>usb_macro.ko]
     DEV[`/dev team_own_stm32`]
     APP[User Application<br/>CLI or Qt]
 
