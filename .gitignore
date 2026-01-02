@@ -1,1 +1,23 @@
-.metadata
+# Qt Creator user files
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+
+# Build directories
+build-*/
+cmake-build-*/
+
+# Generated files
+Makefile
+*.o
+*.obj
+*.autosave
+moc_*
+qrc_*
+ui_*
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+
+compile_commands.json
