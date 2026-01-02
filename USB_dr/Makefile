@@ -1,5 +1,5 @@
 APP = app
-MOD = dev_struct
+MOD = usb_macro
 OBJ = $(APP).o
 obj-m = $(MOD).o
 

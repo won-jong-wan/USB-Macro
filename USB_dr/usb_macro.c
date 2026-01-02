@@ -525,7 +525,7 @@ static int __init stm32_usb_init(void)
     if (ret < 0)
         return ret;
 
-    stm32_class = class_create(THIS_MODULE,DRIVER_NAME);
+    stm32_class = class_create(DRIVER_NAME);
     if (IS_ERR(stm32_class)) {
         ret = PTR_ERR(stm32_class);
         stm32_class = NULL;
