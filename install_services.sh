@@ -1,41 +1,71 @@
 #!/bin/bash
 
 # ==========================================
-# STM32 Multi-Process Service Installer
-# (Auto-detect Path Version)
+# STM32 Hot-Plug Service Installer
+# (Solution: Udev triggers the service)
 # ==========================================
 
-# 루트 권한 확인
 if [ "$EUID" -ne 0 ]; then
-  echo "Error: 이 스크립트는 root 권한으로 실행해야 합니다."
-  echo "사용법: sudo ./install_services.sh"
+  echo "Error: Run as root (sudo ./install_services.sh)"
   exit 1
 fi
 
 # -------------------------------------------------------
-# [중요] 현재 스크립트의 위치를 기준으로 작업 경로 자동 설정
+# [설정] 사용자 입력 (로그인 ID)
 # -------------------------------------------------------
-# 스크립트가 위치한 절대 경로 추출
+DEFAULT_USER=${SUDO_USER:-"pi"}
+
+echo "========================================================"
+echo " [설정] 시리얼 콘솔(CDC) 자동 로그인 사용자 선택"
+echo "========================================================"
+read -p "자동 로그인할 사용자 ID를 입력하세요 (기본값: ${DEFAULT_USER}): " INPUT_USER
+LOGIN_USER=${INPUT_USER:-$DEFAULT_USER}
+
+echo ">>> 선택된 사용자 ID: ${LOGIN_USER}"
+
+# -------------------------------------------------------
+# [설정] 장치 정보
+# -------------------------------------------------------
+DEVICE_NAME="team_own_stm32"
+MODULE_NAME="dev_struct"
+CDC_SYMLINK="ttySTM32"
+
+TARGET_VID="cafe"
+TARGET_PID="dead"
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-# bg_app 폴더 경로 설정
 TARGET_DIR="${SCRIPT_DIR}/bg_app"
 
-echo ">>> 설치 경로를 자동으로 감지했습니다: ${TARGET_DIR}"
+echo ">>> 환경 설정 확인"
+echo " - 타겟 ID: VID=${TARGET_VID} / PID=${TARGET_PID}"
 
-# 파일 존재 여부 확인 (에러 방지)
-if [ ! -f "${TARGET_DIR}/dev.ko" ] || [ ! -f "${TARGET_DIR}/usb_app" ]; then
-    echo "Error: '${TARGET_DIR}' 위치에서 'dev.ko' 또는 'usb_app' 파일을 찾을 수 없습니다."
-    echo "폴더 구조가 올바른지 확인해주세요."
+if [ ! -f "${TARGET_DIR}/${MODULE_NAME}.ko" ]; then
+    echo "Error: ${TARGET_DIR}/${MODULE_NAME}.ko 파일 없음"
     exit 1
 fi
 
-echo ">>> 서비스 등록 자동화 스크립트를 시작합니다..."
+echo ">>> 설치 시작..."
 
 # -------------------------------------------------------
-# 1. load-stm32-driver.service 생성
+# 0. Udev 규칙 (핵심 변경: SYSTEMD_WANTS 추가)
+# -------------------------------------------------------
+echo "0. Updating udev rules..."
+# 이 장치가 감지되면 udev가 자동으로 cdc_mode.service를 실행시킵니다.
+cat <<EOF > /etc/udev/rules.d/99-stm32-custom.rules
+# [Rule 1] Main Driver Device
+KERNEL=="${DEVICE_NAME}", MODE="0666", TAG+="systemd"
+
+# [Rule 2] CDC Serial -> Create Symlink AND Trigger Service
+SUBSYSTEM=="tty", ATTRS{idVendor}=="${TARGET_VID}", ATTRS{idProduct}=="${TARGET_PID}", SYMLINK+="${CDC_SYMLINK}", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cdc_mode.service"
+EOF
+
+udevadm control --reload-rules
+udevadm trigger
+
+# -------------------------------------------------------
+# 1. load-stm32-driver.service
 # -------------------------------------------------------
 echo "1. Creating load-stm32-driver.service..."
-# 주의: 변수($TARGET_DIR)가 들어가므로 경로 부분이 바뀝니다.
 cat <<EOF > /etc/systemd/system/load-stm32-driver.service
 [Unit]
 Description=Load STM32 USB Driver
@@ -44,11 +74,10 @@ Before=cdc_mode.service usb_app.service
 
 [Service]
 Type=oneshot
+ExecStartPre=-/usr/sbin/rmmod ${MODULE_NAME}
 ExecStartPre=-/usr/sbin/rmmod dev
-ExecStart=/usr/sbin/insmod ${TARGET_DIR}/dev.ko
-ExecStartPost=/bin/sh -c 'for i in \$(seq 1 10); do [ -e /dev/team_own_stm32 ] && break || sleep 0.5; done'
-ExecStartPost=/bin/chmod 666 /dev/team_own_stm32
-ExecStop=/usr/sbin/rmmod dev
+ExecStart=/usr/sbin/insmod ${TARGET_DIR}/${MODULE_NAME}.ko
+ExecStop=/usr/sbin/rmmod ${MODULE_NAME}
 RemainAfterExit=yes
 StandardOutput=journal
 StandardError=journal
@@ -58,29 +87,31 @@ WantedBy=sysinit.target
 EOF
 
 # -------------------------------------------------------
-# 2. cdc_mode.service 생성 (경로 의존성 없음)
+# 2. cdc_mode.service (핵심 변경: 조건 제거, Udev 의존)
 # -------------------------------------------------------
 echo "2. Creating cdc_mode.service..."
 cat <<EOF > /etc/systemd/system/cdc_mode.service
 [Unit]
-Description=CDC Serial Console on ttyACM0
-Documentation=man:agetty(8)
-After=load-stm32-driver.service systemd-user-sessions.service
-Before=usb_app.service
+Description=CDC Serial Console on Specific Device (VID:${TARGET_VID} PID:${TARGET_PID})
+After=load-stm32-driver.service
 Requires=load-stm32-driver.service
-ConditionPathExists=/dev/ttyACM0
+# 이제 Udev가 실행을 담당하므로 BindsTo나 ConditionPathExists 제거
+# 장치가 뽑히면 agetty가 종료되고 서비스도 자연스럽게 내려감
+StopWhenUnneeded=yes
 
 [Service]
 Type=idle
-ExecStart=-/sbin/agetty --autologin pi --local-line --noclear -L 115200 ttyACM0 vt100
+# 심볼릭 링크 생성 1초 대기 (안전장치)
+ExecStartPre=/bin/sleep 1
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+
+# agetty 실행
+ExecStart=-/sbin/agetty --autologin ${LOGIN_USER} --local-line --noclear -L 115200 ${CDC_SYMLINK} vt100
+
 Restart=always
-RestartSec=5
-StandardInput=tty
-StandardOutput=tty
-TTYPath=/dev/ttyACM0
-TTYReset=yes
-TTYVHangup=yes
-TTYVTDisallocate=yes
+RestartSec=3
 SyslogIdentifier=cdc_mode
 
 [Install]
@@ -88,15 +119,15 @@ WantedBy=multi-user.target
 EOF
 
 # -------------------------------------------------------
-# 3. usb_app.service 생성
+# 3. usb_app.service
 # -------------------------------------------------------
 echo "3. Creating usb_app.service..."
 cat <<EOF > /etc/systemd/system/usb_app.service
 [Unit]
-Description=STM32 Multi-Process Command Execution System
+Description=STM32 Multi-Process App
 After=load-stm32-driver.service cdc_mode.service
 Requires=load-stm32-driver.service
-BindsTo=dev-team_own_stm32.device
+BindsTo=dev-${DEVICE_NAME}.device
 
 [Service]
 Type=simple
@@ -116,30 +147,24 @@ WantedBy=multi-user.target
 EOF
 
 # -------------------------------------------------------
-# 4. 서비스 등록 및 시작
+# 4. 등록 및 시작
 # -------------------------------------------------------
-echo ">>> Systemd 데몬 리로드 중..."
 systemctl daemon-reload
+systemctl reset-failed 
 
-echo ">>> 서비스 활성화 (Enable) 중..."
-systemctl enable load-stm32-driver.service
+# 기존에 실패 상태로 죽어있는 서비스 초기화
+systemctl stop cdc_mode.service 2>/dev/null
+
+systemctl enable load-stm32-driver.service usb_app.service
+# cdc_mode는 udev가 켜주지만, 명시적으로 enable 해두어도 무방함
 systemctl enable cdc_mode.service
-systemctl enable usb_app.service
 
-echo ">>> 서비스 시작 (Start) 중..."
 systemctl start load-stm32-driver.service
-systemctl start cdc_mode.service
-systemctl start usb_app.service
 
-# -------------------------------------------------------
-# 5. 상태 확인
-# -------------------------------------------------------
 echo "========================================================"
-echo "                   설치 완료"
+echo "설치 완료 (Udev Trigger 방식 적용)"
+echo "--------------------------------------------------------"
+echo "1. USB 장치를 뽑았다가 다시 연결하세요."
+echo "2. 연결 후 2~3초 뒤 아래 명령어로 확인하세요:"
+echo "   sudo systemctl status cdc_mode.service"
 echo "========================================================"
-echo "설치된 경로: ${TARGET_DIR}"
-echo "--------------------------------------------------------"
-echo "[1] load-stm32-driver:" $(systemctl is-active load-stm32-driver.service)
-echo "[2] cdc_mode:         " $(systemctl is-active cdc_mode.service)
-echo "[3] usb_app:          " $(systemctl is-active usb_app.service)
-echo "--------------------------------------------------------"
