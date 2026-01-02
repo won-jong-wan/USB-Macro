@@ -1,2 +1,1 @@
-# USB-Macro
-USB-Macro
+# USB-Macro-kernel
