@@ -11,11 +11,6 @@ read/write 인터페이스로 사용할 수 있도록 설계되었습니다.
 
 ## 1. 프로젝트 개요
 
-- **Device**: STM32 (USB Vendor Class)
-- **Host**: Linux (Raspberry Pi4)
-- **Transfer Type**: USB Bulk IN / OUT
-- **Driver Type**: Linux Kernel Module (Char Device)
-
 USB Full-Speed 환경에서 데이터는 64바이트 패킷 단위로 분할되어 전송되므로,  
 커널 드라이버에서 패킷 단위가 아닌 **프레임 기반 프로토콜**을 적용하여  
 상위 계층(User Space)의 복잡도를 줄이는 것을 목표로 하였습니다.
@@ -69,6 +64,8 @@ Linux 커널 드라이버는 해당 장치를 인식하여
 - `usb_driver`, `probe()`, `disconnect()` 구조 사용
 
 ### 4.2 USB Bulk 비동기 처리 (URB)
+URB는 비동기 방식으로 동작하여,
+USB 전송 지연이 사용자 공간 I/O를 블로킹하지 않도록 설계되었습니다.
 
 - Bulk IN / OUT 엔드포인트 사용
 - **URB(USB Request Block)** 기반 비동기 전송
@@ -108,6 +105,26 @@ Linux 커널 드라이버는 해당 장치를 인식하여
 
 ## 6. 빌드 및 실행 방법 
 
+### 6.1 커널 모듈 적재 / 제거 
+```bash
+sudo insmod usb_macro.ko
+# 모듈 제거 시 확장자(.ko) 없이 이름만 사용
+sudo rmmod usb_macro
+```
+
+### 6.2 디바이스 확인 
+```bash
+ls -l /dev/team_own_stm32
+```
+### 6.3 테스트 방법  
+```bash
+# 사용자 공간에서 프레임 수신 확인
+sudo cat /dev/team_own_stm32 | hexdump -C
+# 커널 로그 확인 (probe, URB RX, disconnect 등)
+dmesg | tail -20
+```
+
+
 ## 7. Troubleshooting 
 ### 7.1 class_create() 컴파일 에러
 
@@ -121,12 +138,12 @@ Linux 커널 드라이버는 해당 장치를 인식하여
 
 **구버전 커널**
 
-```c
+```bash
 class_create(THIS_MODULE, name);
+```
 
-
-신버전 커널 (Linux 5.x 이상)
-
+**신버전 커널 (Linux 5.x 이상)**
+```bash
 class_create(name);
 ```
 
