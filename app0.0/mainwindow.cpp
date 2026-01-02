@@ -1,87 +1,195 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "commandfilemanager.h"
 
+#include <QGraphicsRectItem>
+#include <QFileDialog>
+#include <QScrollBar>
 #include "QString"
 #include "QDebug"
 
+#include "ui_config.h"
+
 #define MAX_DOWNLOAD_COUNT 500
+
 /* to do list
- * type 변경 시 시각화
- *
- *
+ * 명령어들을 스프레드 시트나 별도의 타입으로 저장하는 함수 제공
  *
  *
  * ****** finished ******
- *
- *
- *
- *
- *
+ * type 변경 시 표시
+ * upload 구현
+ * line num, type, cmd 스크롤바 동기화
+ * 그래픽 노드 시각화
+ * 아이템 옮길 때 타입 동기화 시키기
+ * set type  버튼 추가
+ * download 구현
  */
+
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->listWidget->installEventFilter(this);
+
+    // line num, type, cmd 스크롤바 동기화
+    auto cmdEdit  = ui->listWidget;   // 메인 편집창
+    auto lineEdit = ui->numListWidget_2;  // 줄 번호
+    auto typeEdit = ui->typeListWidge;  // 타입 표시
+
+    QScrollBar *vbar = cmdEdit->verticalScrollBar();
+
+    connect(vbar, &QScrollBar::valueChanged,
+            lineEdit->verticalScrollBar(), &QScrollBar::setValue);
+    connect(vbar, &QScrollBar::valueChanged,
+            typeEdit->verticalScrollBar(), &QScrollBar::setValue);
+
+    // 버튼 색 레이아웃 설정
+    ui->setSbtn->setStyleSheet("color:" FG_COLOR_S ";"
+                               "background-color: #E8F2FB;"
+                               "font-weight: bold;");
+    ui->setCbtn->setStyleSheet("color:" FG_COLOR_C ";"
+                               "background-color: #E9F7EE;"
+                               "font-weight: bold;");
+    ui->setDbtn->setStyleSheet("color:" FG_COLOR_D ";"
+                               "background-color: #FFF3E5;"
+                               "font-weight: bold;");
+
+    // listWidget 아이템이 드래그로 이동될 때 호출
+    connect(ui->listWidget->model(), &QAbstractItemModel::rowsMoved,
+            this, &MainWindow::onListRowsMoved);
+
+
+    m_flowScene = new GridScene();
+
+    init_view();
+
     item_num = 0;
+
 
     int ret = WonDeviceApi::getInstance()->openDevice();
     if (ret < 0){
-        Dialog popup;   // 1. 객체 생성 (클래스 이름이 ErrorPopup일 경우)
-
+        Dialog popup;       // 1. 객체 생성 (클래스 이름이 ErrorPopup일 경우)
         popup.exec();       // 2. 창 띄우기 (이 창을 닫을 때까지 뒤에 창 클릭 불가)
     }
 
+    m_manager = new NodeManager(m_flowScene, this);
+
+    // ==========================================
+    // [테스트 시나리오]
+    // 목표: S는 옆으로, C는 밑으로 가는지 확인
+    // ==========================================
+
+    // 1. 시작 (S) -> (0,0) 위치 예상
+    m_manager->addCommand(NodeType::Type_S, "S Node");
+    m_manager->addCommand(NodeType::Type_C, "C Node");
+    m_manager->addCommand(NodeType::Type_Delay, "Delay Node");
+    m_manager->addCommand(NodeType::Type_S, "S Node");
+
 }
+
+
+
+
 
 MainWindow::~MainWindow()
 {
+    delete m_flowScene;
     delete ui;
 }
 
 
-//add btn
-void MainWindow::on_pushButton_2_clicked()
-{
+void MainWindow::init_view(){
+    int h = ui->flowView->height();
+    int w = ui->flowView->width();
 
-
-    QChar myChar = 'S';
-
-    // type 표시 하기 위한 typeListWidget에 넣어주기
-    QListWidgetItem *tmp_item = new QListWidgetItem("S");
-    QFont font = tmp_item->font(); // 현재 폰트 가져오기
-    tmp_item->setTextAlignment(Qt::AlignCenter);
-    font.setBold(true);        // 굵게
-    font.setPointSize(12);
-    tmp_item->setFont(font);       // 설정한 폰트 적용
-
-    tmp_item->setForeground(QBrush(QColor("#FF5500")));
-    ui->typeListWidge->addItem(tmp_item);
-
-
-    // commend line 추가
-    ui->listWidget->addItem("");
-
-    item_num++;
-
-    ui->listWidget->item(item_num-1)->setData(Qt::UserRole, myChar);    // 두 번째 칸에 char 저장
-
-
-    auto item = ui->listWidget->item(item_num-1);
-    item->setFlags(item->flags()|Qt::ItemIsEditable);
-    item->setBackground(QColor(220, 220, 220));
-
-    ui->numListWidget_2->addItem(QString::number(item_num));
-    auto numitem =  ui->numListWidget_2->item(item_num-1);
-    numitem->setTextAlignment(Qt::AlignCenter);
-
-
-
-
-    //ui->listWidget->clearSelection();  선택 모두 취소
+    m_flowScene->setSceneRect(0, 0, w, h);
+    // 테스트용 박스
+    ui->flowView->setScene(m_flowScene);
+    ui->flowView->centerOn(0, 0);
+    ui->flowView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 }
 
+
+void MainWindow::update_view()
+{
+    if (!m_manager) return;
+
+    // 1) 모든 노드/엣지 삭제
+    m_manager->clear();
+
+    // 2) listWidget에 있는 명령들을 순서대로 다시 생성
+    for (int i = 0; i < ui->listWidget->count(); ++i)
+    {
+        QListWidgetItem* item = ui->listWidget->item(i);
+        if (!item) continue;
+
+        // 타입 (UserRole에 저장된 char)
+        char typeChar = (char)item->data(Qt::UserRole).toInt();
+        NodeType type;
+
+        if (typeChar == 'S')      type = NodeType::Type_S;
+        else if (typeChar == 'C') type = NodeType::Type_C;
+        else if (typeChar == 'D') type = NodeType::Type_Delay;
+        else                      type = NodeType::Type_S; // fallback
+
+        // 텍스트
+        QString text = item->text();
+
+        // NodeManager에 추가
+        m_manager->addCommand(type, text);
+    }
+
+    qDebug() << "[update_view] view updated. Node count =" << ui->listWidget->count();
+}
+
+void MainWindow::appendCommandRow(char typeChar, const QString &text)
+{
+    // 현재 개수 기준
+    int curCount = ui->listWidget->count();
+
+    // 1) 타입 리스트 (S/C/D)
+    QListWidgetItem *typeItem = new QListWidgetItem(QString(typeChar));
+    QFont font = typeItem->font();
+    typeItem->setTextAlignment(Qt::AlignCenter);
+    font.setBold(true);
+    font.setPointSize(12);
+    typeItem->setFont(font);
+
+
+    if (typeChar == 'S')
+        typeItem->setForeground(QBrush(QColor(FG_COLOR_S)));
+    else if (typeChar == 'C')
+        typeItem->setForeground(QBrush(QColor(FG_COLOR_C)));
+    else if (typeChar == 'D')
+        typeItem->setForeground(QBrush(QColor(FG_COLOR_D)));
+
+    ui->typeListWidge->addItem(typeItem);
+
+    // 2) 커맨드 리스트
+    QListWidgetItem *cmdItem = new QListWidgetItem(text);
+    cmdItem->setData(Qt::UserRole, typeChar);
+    cmdItem->setFlags(cmdItem->flags() | Qt::ItemIsEditable);
+    cmdItem->setBackground(QColor(220, 220, 220));
+    ui->listWidget->addItem(cmdItem);
+
+    // 3) 줄 번호 리스트
+    int lineNo = curCount + 1;
+    QListWidgetItem *numItem = new QListWidgetItem(QString::number(lineNo));
+    numItem->setTextAlignment(Qt::AlignCenter);
+    ui->numListWidget_2->addItem(numItem);
+
+    // item_num 동기화
+    item_num = ui->listWidget->count();
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    appendCommandRow('S', "");
+    update_view();
+}
 
 //커맨드 delete하는 함수
 void MainWindow::on_pushButton_clicked()
@@ -111,6 +219,7 @@ void MainWindow::on_pushButton_clicked()
             }
         }
     }
+    update_view();
 }
 
 
@@ -136,9 +245,10 @@ void MainWindow::updateSelectedItemsType(char typeChar)
         int row = ui->listWidget->row(item);
         item->setData(Qt::UserRole, typeChar);
         ui->typeListWidge->item(row)->setText(QString(typeChar));
-        if (typeChar == 'S')        ui->typeListWidge->item(row)->setForeground(QBrush(QColor("#FF5500")));
-        else if(typeChar == 'C')    ui->typeListWidge->item(row)->setForeground(QBrush(QColor("#0055FF")));
-        else if(typeChar == 'D')    ui->typeListWidge->item(row)->setForeground(QBrush(QColor("#555555")));
+        if (typeChar == 'S')        ui->typeListWidge->item(row)->setForeground(QBrush(QColor(FG_COLOR_S)));
+        else if(typeChar == 'C')    ui->typeListWidge->item(row)->setForeground(QBrush(QColor(FG_COLOR_C)));
+        else if(typeChar == 'D')    ui->typeListWidge->item(row)->setForeground(QBrush(QColor(FG_COLOR_D)));
+
     }
 }
 
@@ -179,76 +289,228 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 }
 
-
-
-/*  upload btn     */
+/*  upload btn  */
 void MainWindow::on_pushButton_3_clicked()
 {
-
-
     qDebug() << "upload btn clicked!!\n";
     QStringList result;
 
-    for(int i = 0; i < ui->listWidget->count(); ++i){
-        qDebug() << i + 1<<   "  "<<  ui->listWidget->item(i)->text();
-        qDebug() << i + 1<<   "  "<<  (char)ui->listWidget->item(i)->data(Qt::UserRole).toInt() << "\n";
+    for (int i = 0; i < ui->listWidget->count(); ++i) {
+        qDebug() << i + 1 << "  " << ui->listWidget->item(i)->text();
+        qDebug() << i + 1 << "  "
+                 << (char)ui->listWidget->item(i)->data(Qt::UserRole).toInt()
+                 << "\n";
 
+        char type   = (char)ui->listWidget->item(i)->data(Qt::UserRole).toInt();
+        auto s_cmd  = ui->listWidget->item(i)->text();
 
-        char type = (char)ui->listWidget->item(i)->data(Qt::UserRole).toInt();
-        auto s_cmd = ui->listWidget->item(i)->text();
-
-        datapacket packet = createPacket(2,type, i == 0,  i == (ui->listWidget->count()-1), s_cmd.toStdString());
-
+        datapacket packet = createPacket(
+            2,
+            type,
+            i == 0,
+            i == (ui->listWidget->count() - 1),
+            s_cmd.toStdString()
+            );
 
         int ret = WonDeviceApi::getInstance()->writePacket(packet);
-        if (ret == -1){
-             qDebug() << "write err!!\n==============packet count :"<< i+1 << "===============";
-             printPacket(packet);
-             break;
+        if (ret == -1) {
+            qDebug() << "write err!!\n==============packet count :"
+                     << i + 1 << "===============";
+            printPacket(packet);
+            break;
         }
 
         qDebug() << "write packet sucessful, count: " << i + 1;
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+/*  upload btn     */
 void MainWindow::on_downloadBtn_clicked()
 {
-
     qDebug() << "download btn clicked!!\n";
+
+    // 기존 리스트 싹 비우고 시작
+    ui->listWidget->clear();
+    ui->typeListWidge->clear();
+    ui->numListWidget_2->clear();
+    item_num = 0;
+
     datapacket packet;
     uint packet_cnt = 0;
-    while (1){
+
+    while (1) {
         packet_cnt++;
-        qDebug() << "try packet download...\t (numner " << packet_cnt << ")";
+        qDebug() << "try packet download...\t (number " << packet_cnt << ")";
 
         int ret = WonDeviceApi::getInstance()->readPacket(packet);
-        if (ret == -1){
+        if (ret == -1) {
             qDebug() << "[ERROR] Failed to read packet from device.";
             qDebug() << "stop download..";
             printPacket(packet);
             break;
         }
+
         printPacket(packet);
 
-        if((packet.info >> 2) & 1){
+        // ====== 여기서 packet → typeChar / command 문자열로 파싱 ======
+        // ★ struct 정의에 맞게 이 부분은 네 코드 기준으로 맞춰라.
+        //   아래는 예시 (type, cmd 필드 있다고 가정):
+
+        char typeChar = ((packet.info >> 3) & 1) ? 'D' : ((packet.info) & 1) ? 'S' : 'C';
+        // 예: 'S', 'C', 'D'
+                  // 예: null-terminated 문자열
+
+        // packet 내려받은 뒤
+        uint16_t len = packet.cmd_len;
+
+        // 안전장치 (패킷 깨졌을 때 대비)
+        if (len > sizeof(packet.command))
+            len = sizeof(packet.command);
+
+        QString cmd = QString::fromUtf8(packet.command, len);
+
+
+        appendCommandRow(typeChar, cmd);
+        // ============================================================
+
+        // END 플래그(마지막 패킷) 검사 (네가 이미 쓰던 로직 재사용)
+        if ((packet.info >> 1) & 1) {
             qDebug() << "[INFO] Download successful.";
             break;
         }
-        if (packet_cnt > MAX_DOWNLOAD_COUNT){
-            qDebug() << "[ERROR] Packet count limit exceeded. Stopping download.. (count = " << MAX_DOWNLOAD_COUNT << "X)";
+
+        if (packet_cnt > MAX_DOWNLOAD_COUNT) {
+            qDebug() << "[ERROR] Packet count limit exceeded. Stopping download.. (count = "
+                     << MAX_DOWNLOAD_COUNT << "X)";
             break;
         }
     }
 
+    // 노드 뷰도 listWidget 기준으로 다시 그리기
+    update_view();
+}
+
+
+
+void MainWindow::on_listWidget_itemChanged(QListWidgetItem *item)
+{
+    update_view();
+}
+
+
+void MainWindow::onListRowsMoved(const QModelIndex &parent,
+                                 int start, int end,
+                                 const QModelIndex &destination, int row)
+{
+    Q_UNUSED(parent);
+    Q_UNUSED(start);
+    Q_UNUSED(end);
+    Q_UNUSED(destination);
+    Q_UNUSED(row);
+
+    // 1) 타입/라인넘버 리스트 다시 생성
+    ui->typeListWidge->clear();
+    ui->numListWidget_2->clear();
+
+    for (int i = 0; i < ui->listWidget->count(); ++i) {
+        QListWidgetItem *cmdItem = ui->listWidget->item(i);
+        if (!cmdItem) continue;
+
+        // ---- 타입 리스트 재생성 ----
+        char typeChar = (char)cmdItem->data(Qt::UserRole).toInt();
+        QListWidgetItem *typeItem = new QListWidgetItem(QString(typeChar));
+        QFont font = typeItem->font();
+        font.setBold(true);
+        font.setPointSize(12);
+        typeItem->setFont(font);
+        typeItem->setTextAlignment(Qt::AlignCenter);
+
+        if (typeChar == 'S')
+            typeItem->setForeground(QBrush(QColor(FG_COLOR_S)));
+        else if (typeChar == 'C')
+            typeItem->setForeground(QBrush(QColor(FG_COLOR_C)));
+        else if (typeChar == 'D')
+            typeItem->setForeground(QBrush(QColor(FG_COLOR_D)));
+
+        ui->typeListWidge->addItem(typeItem);
+
+
+    }
+
+
+
+    // 2) 그래픽 노드도 순서대로 다시 그리기
+    update_view();
+}
+
+
+
+void MainWindow::on_setSbtn_clicked()
+{
+    updateSelectedItemsType('S');
+}
+
+
+void MainWindow::on_setCbtn_clicked()
+{
+    updateSelectedItemsType('C');
+}
+
+
+void MainWindow::on_setDbtn_clicked()
+{
+    updateSelectedItemsType('D');
+}
+
+
+void MainWindow::on_saveBtn_clicked()
+{
+    QString path = QFileDialog::getSaveFileName(
+                                this,
+                                "Save Commands",
+                                "commands_example.wcmd",
+                                "Command Files (*.wcmd)");
+
+    if (path.isEmpty()) return;
+
+    QList<CommandRecord> list;
+
+    // UI → list 변환
+    for (int i = 0; i < ui->listWidget->count(); ++i) {
+        auto item = ui->listWidget->item(i);
+
+        CommandRecord r;
+        r.type = (char)item->data(Qt::UserRole).toInt();
+        r.cmd  = item->text();
+        list.append(r);
+    }
+
+    CommandFileManager::saveToFile(path, list);
+}
+
+
+void MainWindow::on_loadBtn_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(
+        this, "Load Commands", "", "Command Files (*.wcmd)");
+
+    if (path.isEmpty()) return;
+
+    QList<CommandRecord> list;
+
+    if (!CommandFileManager::loadFromFile(path, list))
+        return;
+
+    // UI 초기화
+    ui->listWidget->clear();
+    ui->typeListWidge->clear();
+    ui->numListWidget_2->clear();
+    item_num = 0;
+
+    // list → UI
+    for (auto &rec : list)
+        appendCommandRow(rec.type, rec.cmd);
+
+    update_view();
 }
 
