@@ -34,14 +34,22 @@ USB Full-Speed 환경에서 데이터는 64바이트 패킷 단위로 분할되�
 ## 3. 전체 시스템 구조
 ``` mermaid
 flowchart TD
-    STM32[STM32 USB Vendor]
-    USB[USB Bulk IN OUT]
-    CORE[Linux USB Core]
-    DRV[Kernel USB Driver<br/>usb_macro.ko]
-    DEV["/dev/team_own_stm32"]
-    APP[User Application<br/>CLI or Qt]
+    STM32["STM32 USB Vendor Device"]
+    EP["USB Bulk Endpoint<br/>(IN / OUT)"]
+    HW["USB Host Controller HW"]
+    HCD["Host Controller Driver<br/>(HCD)"]
+    CORE["Linux USB Core<br/>(usbcore)"]
+    DRV["Kernel USB Driver<br/>usb_macro.ko"]
+    DEV["/dev/team_own_stm32<br/>(Char Device)"]
+    APP["User Application<br/>CLI / Qt"]
 
-    STM32 --> USB --> CORE --> DRV --> DEV --> APP
+    STM32 --> EP
+    EP --> HW
+    HW --> HCD
+    HCD --> CORE
+    CORE --> DRV
+    DRV --> DEV
+    DEV --> APP
 ```
 
 
