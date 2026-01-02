@@ -1,0 +1,7 @@
+../Core/Src/ui.c:20:13:UpperTag	8	static
+../Core/Src/ui.c:35:13:DrawRootMenu	16	static
+../Core/Src/ui.c:52:13:DrawLinuxMode	16	static
+../Core/Src/ui.c:70:13:DrawEmergencyMode	8	static
+../Core/Src/ui.c:82:6:UI_Init	8	static
+../Core/Src/ui.c:88:10:UI_GetState	4	static
+../Core/Src/ui.c:92:6:UI_Process	16	static
