@@ -12,7 +12,7 @@ enum {
 
 extern volatile bool usb_ready;
 extern void ven_send();
-extern uint8_t g_usb_mode;
+extern volatile uint8_t g_usb_mode;
 
 UI_State g_s_state = UI_STATE_ROOT_MENU;
 static uint8_t s_root_sel = 0;   // 0=Linux, 1=Emergency

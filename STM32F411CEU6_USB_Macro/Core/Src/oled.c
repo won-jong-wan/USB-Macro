@@ -45,11 +45,11 @@ static const uint8_t font5x7[96][5] = {
 static inline void OLED_DC_Cmd(void)   { HAL_GPIO_WritePin(DC_GPIO_Port,  DC_Pin,  GPIO_PIN_RESET); }
 static inline void OLED_DC_Data(void)  { HAL_GPIO_WritePin(DC_GPIO_Port,  DC_Pin,  GPIO_PIN_SET);   }
 
-static void OLED_SendCmd(uint8_t cmd)
-{
-  OLED_DC_Cmd();
-  HAL_SPI_Transmit(s_hspi, &cmd, 1, HAL_MAX_DELAY);
-}
+//static void OLED_SendCmd(uint8_t cmd)
+//{
+//  OLED_DC_Cmd();
+//  HAL_SPI_Transmit(s_hspi, &cmd, 1, HAL_MAX_DELAY);
+//}
 
 static void OLED_SendCmdList(const uint8_t *cmds, size_t n)
 {

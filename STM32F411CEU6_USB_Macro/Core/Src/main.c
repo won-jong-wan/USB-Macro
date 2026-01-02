@@ -99,7 +99,7 @@ volatile uint8_t g_usb_mode = USB_MODE_MSC_VENDOR;
 volatile bool usb_ready = true;
 volatile bool btn_clicked = false;
 
-char msg_dma[512];
+char tiny2uart[BUFFER_SIZE*2*32]; //5k
 
 /* USER CODE END PV */
 
@@ -185,28 +185,28 @@ void mod_change_watchdog() {
 	}
 }
 
-// full or half -> callback -> buffer fill twice
-#define BUF_SIZE 1024
-
-volatile uint8_t is_fulled = 0;
-volatile uint8_t is_halfed = 0;
-
-uint8_t recv_buf[BUF_SIZE] = { 0 };
-uint8_t recv_val[BUF_SIZE] = { 0 };
-volatile uint16_t uart_h = 0;
-
 void cdc_task(void) {
 	// 2. PC와 연결되어 있는지 확인 (DTR 신호 체크)
 	if (tud_cdc_connected()) {
 		// 3. 읽을 데이터가 있는지 확인
 		if (tud_cdc_available()) {
 			// 데이터 읽기
-			uint32_t count = tud_cdc_read(msg_dma, sizeof(msg_dma));
+			uint32_t count = tud_cdc_read(tiny2uart, sizeof(tiny2uart));
 
-			HAL_UART_Transmit_DMA(&huart2, (uint8_t*) msg_dma, count);
+			HAL_UART_Transmit(&huart2, (uint8_t*) tiny2uart, count ,HAL_MAX_DELAY);
 		}
 	}
 }
+
+// full or half -> callback -> buffer fill twice
+#define BUF_SIZE 1024
+
+uint8_t is_fulled = 0;
+uint8_t is_halfed = 0;
+
+uint8_t recv_buf[BUF_SIZE] = { 0 };
+uint8_t recv_val[BUF_SIZE] = { 0 };
+uint16_t uart_h = 0;
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 	// Size는 buf 0부터 현재까지 수신된 데이터의 개수
@@ -239,7 +239,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 		recv_val[tmp++] = recv_buf[uart_h++];
 	}
 	recv_val[tmp] = '\0';
-
+//
 //	printf("2: %d-%d %s\n", Size, uart_h, recv_val);
 
 	if (g_usb_mode == USB_MODE_CDC) {
@@ -338,7 +338,6 @@ int main(void) {
 		tud_task();
 #endif // WITHOUT_TUD
 		mod_change_watchdog();
-//		printf("encoder: %ld\n", __HAL_TIM_GET_COUNTER(&htim2));
 
 		if (__HAL_TIM_GET_COUNTER(&htim5) > 20) {
 			int step = Encoder_GetStep();
@@ -347,16 +346,13 @@ int main(void) {
 			__HAL_TIM_SET_COUNTER(&htim5, 0);
 		}
 
-		switch (g_s_state) {
-		case UI_STATE_EMERGENCY_MODE:
+		switch (g_usb_mode) {
+		case USB_MODE_CDC:
 			cdc_task();
 			break;
-		case UI_STATE_LINUX_MODE:
+		case USB_MODE_MSC_VENDOR:
 			break;
-//		case USB_MODE_HID_MSC:
-////			hid_task();
-//			break;
-		case UI_STATE_ROOT_MENU:
+		case USB_MODE_HID_MSC:
 			break;
 		}
 		/* USER CODE END WHILE */

@@ -23,8 +23,10 @@ uint32_t g_vendor_start_address;
 
 volatile uint8_t g_sd_state;
 volatile uint8_t g_sd_card_state;
-volatile uint8_t sd_buffer_need_flash = false;
+uint8_t sd_buffer_need_flash = false;
 uint32_t g_sd_buf_header = 0;
+
+volatile task_q_t task_q;
 
 //uint8_t g_msc2sd_buffer[4 * KB];
 //uint8_t g_vendor2sd_buffer[BLOCK_SIZE];

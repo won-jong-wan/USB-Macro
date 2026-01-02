@@ -10,7 +10,7 @@
 
 // -- include
 #include <custum_t.h>
-#include <stdbool.h>
+#include <task_q.h>
 
 // -- define
 //#define ASYNC
@@ -49,6 +49,8 @@ extern uint32_t g_ven_header;
 extern uint32_t g_ven_info_addr;
 
 // -- buffer
+extern volatile task_q_t task_q;
+
 extern char msg_dma[512];
 extern uint8_t g_msc2sd_buffer[4*KB];
 extern uint8_t g_vendor2sd_buffer[BLOCK_SIZE];

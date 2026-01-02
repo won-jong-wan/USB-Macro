@@ -12,7 +12,7 @@ enum {
 };
 
 // 기존 bool 대신 uint8_t로 변경하여 3가지 상태를 표현
-extern uint8_t g_usb_mode;
+extern volatile uint8_t g_usb_mode;
 
 // --------------------------------------------------------------------+
 // 1. Device Descriptors
