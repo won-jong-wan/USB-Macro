@@ -410,7 +410,7 @@ void MainWindow::onListRowsMoved(const QModelIndex &parent,
 
     // 1) 타입/라인넘버 리스트 다시 생성
     ui->typeListWidge->clear();
-    ui->numListWidget_2->clear();
+
 
     for (int i = 0; i < ui->listWidget->count(); ++i) {
         QListWidgetItem *cmdItem = ui->listWidget->item(i);
