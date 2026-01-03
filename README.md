@@ -9,7 +9,7 @@
 
 **AppImage**
 ```bash
-wget https://github.com/USER/REPO/releases/latest/download/USBMacroCommandStudio-v1.0.0-x86_64.AppImage
+wget https://github.com/won-jong-wan/USB-Macro/releases/download/v1.0.0/linuxdeployqt-continuous-x86_64.AppImage
 chmod +x USBMacroCommandStudio-v1.0.0-x86_64.AppImage
 sudo ./USBMacroCommandStudio-v1.0.0-x86_64.AppImage
 ```
