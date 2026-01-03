@@ -3,7 +3,16 @@
 장치 제어 명령어를 리스트 형태로 작성하고, 이를 **노드 그래프(Flowchart)** 형태로 실시간 시각화하여 관리하는 Qt 기반 데스크톱 애플리케이션입니다.
 
 <img width="1181" height="697" alt="image" src="https://github.com/user-attachments/assets/04ba0c8f-e81e-449b-b11b-edc559eb555b" />
+## ⬇️ Download
 
+### Linux (x86_64)
+
+**AppImage**
+```bash
+wget https://github.com/USER/REPO/releases/latest/download/USBMacroCommandStudio-v1.0.0-x86_64.AppImage
+chmod +x USBMacroCommandStudio-v1.0.0-x86_64.AppImage
+./USBMacroCommandStudio-v1.0.0-x86_64.AppImage
+```
 
 ## ✨ 주요 기능 (Key Features)
 
