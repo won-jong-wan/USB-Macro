@@ -1,0 +1,17 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-g",
+      "-Iheader",
+      "-c",
+      "-o",
+      "build/executor.o",
+      "source/executor.c"
+    ],
+    "directory": "/home/burger/RPI_KERNEL_WORKSPACE/c/poll",
+    "file": "/home/burger/RPI_KERNEL_WORKSPACE/c/poll/source/executor.c",
+    "output": "/home/burger/RPI_KERNEL_WORKSPACE/c/poll/build/executor.o"
+  }
+]
