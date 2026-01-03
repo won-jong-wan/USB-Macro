@@ -300,7 +300,7 @@ int process_packet(datapacket *pkt) {
   printf("패킷 정보\n");
   printf("  Magic   : 0x%X\n", pkt->magic);
   printf("  Version : %d\n", version);
-  printf("  Delay   : %s\n", dealy ? "지연" : "-");
+  printf("  Delay   : %s\n", delay ? "지연" : "-");
   printf("  Start   : %s\n", start ? "시작" : "-");
   printf("  IsEnd   : %s\n", isEnd ? "마지막 패킷" : "계속");
   printf("  Type    : %s\n", type ? "S노드" : "C노드");
