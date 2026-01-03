@@ -191,7 +191,7 @@ void cdc_task(void) {
 		// 3. 읽을 데이터가 있는지 확인
 		if (tud_cdc_available()) {
 			// 데이터 읽기
-			uint32_t count = tud_cdc_read(tiny2uart, sizeof(tiny2uart));
+			uint32_t count = tud_cdc_read(tiny2lsuart, sizeof(tiny2uart));
 
 			HAL_UART_Transmit(&huart2, (uint8_t*) tiny2uart, count ,HAL_MAX_DELAY);
 		}
