@@ -11,7 +11,7 @@
 ```bash
 wget https://github.com/USER/REPO/releases/latest/download/USBMacroCommandStudio-v1.0.0-x86_64.AppImage
 chmod +x USBMacroCommandStudio-v1.0.0-x86_64.AppImage
-./USBMacroCommandStudio-v1.0.0-x86_64.AppImage
+sudo ./USBMacroCommandStudio-v1.0.0-x86_64.AppImage
 ```
 
 ## ✨ 주요 기능 (Key Features)
