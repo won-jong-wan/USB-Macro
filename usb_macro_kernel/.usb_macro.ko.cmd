@@ -1,0 +1,1 @@
+savedcmd_/home/ubuntu/USB-Macro/USB_dr/usb_macro.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/ubuntu/USB-Macro/USB_dr/usb_macro.ko /home/ubuntu/USB-Macro/USB_dr/usb_macro.o /home/ubuntu/USB-Macro/USB_dr/usb_macro.mod.o /home/ubuntu/USB-Macro/USB_dr/.module-common.o
