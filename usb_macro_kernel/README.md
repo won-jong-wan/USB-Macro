@@ -27,6 +27,7 @@ USB Full-Speed 환경에서 데이터는 64바이트 패킷 단위로 분할되�
 ---
 
 ## 3. 전체 시스템 구조
+![img](images/system.png)
 ``` mermaid
 flowchart TD
     STM32["STM32 USB Vendor Device"]
@@ -57,21 +58,25 @@ Linux 커널 드라이버는 해당 장치를 인식하여
 ---
 
 ## 4. 커널 드라이버 설계
-
+본 커널 드라이버(usb_macro.ko)는 STM32 USB Vendor 디바이스와 사용자 공간 사이의
+데이터 경로를 제공하며, 다음 역할을 수행한다.
 ### 4.1 USB Device 매칭
 
 - VID / PID 및 Interface Class(0xFF)를 기반으로 디바이스를 매칭
 - `usb_driver`, `probe()`, `disconnect()` 구조 사용
+- USB 디바이스가 연결되면 커널 드라이버가 매칭되어
+다음과 같은 probe 로그가 출력된다.
+![img](images/vendor.png)
 
 ### 4.2 USB Bulk 비동기 처리 (URB)
 URB는 비동기 방식으로 동작하여,
-USB 전송 지연이 사용자 공간 I/O를 블로킹하지 않도록 설계되었습니다.
+USB 전송 지연이 사용자 공간 I/O를 블로킹하지 않도록 설계되었다.
 
 - Bulk IN / OUT 엔드포인트 사용
 - **URB(USB Request Block)** 기반 비동기 전송
 - 수신 완료 시 completion callback에서 처리
 
-### 4.3 character Device 인터페이스 
+### 4.3 Character Device 인터페이스 
 드라이버는 사용자 공간에서 사용하기 쉽도록 `/dev/team_own_stm32` 캐릭터 디바이스를 제공한다.
 사용자는 일반 파일 I/O와 동일하게 open/read/write/poll을 사용할 수 있다.
 
@@ -116,6 +121,7 @@ sudo rmmod usb_macro
 ```bash
 ls -l /dev/team_own_stm32
 ```
+![img](images/dev.png)
 ### 6.3 테스트 방법  
 ```bash
 # 사용자 공간에서 프레임 수신 확인
@@ -123,7 +129,9 @@ sudo cat /dev/team_own_stm32 | hexdump -C
 # 커널 로그 확인 (probe, URB RX, disconnect 등)
 dmesg | tail -20
 ```
+- STM32에서 전송된 프레임이 커널 드라이버를 통해 사용자 공간으로 정상 전달된 결과
 
+![img](images/hexdump.png)
 
 ## 7. Troubleshooting 
 ### 7.1 class_create() 컴파일 에러
@@ -168,7 +176,5 @@ class_create(name);
 
 #### 해결
 
-Host/Device 간 프로토콜 정의(magic, header, length)를 통합
-- magic number
-- 헤더 구조
-- payload length 해석 방식 
+- Host/Device 간 magic number 정의를 통합하여
+프레임 파싱 단계에서 데이터가 정상 처리되도록 수정
