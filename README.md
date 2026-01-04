@@ -1,10 +1,11 @@
-# USB-MACRO 🚀
+# USB-MACRO 
 
 **SSH 붙잡고 ROS 환경 세팅하느라 시간 쓰지 말고, USB 하나 꽂고 커피 한 잔 하세요.**  
 **USB-MACRO는 TurtleBot(Raspberry Pi)를 “USB 동글(Black Pill)”로 자동 실행/복구까지 하는 Smart USB Bridge 입니다.**
 
 <center>
-<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/16ff0826-228a-4b60-b31c-b8ce300529d9" />
+![첫장면짤](https://github.com/user-attachments/assets/04ee6e79-f1dc-4290-a84a-9200a504c0f3)
+
 
 
 
@@ -30,6 +31,14 @@
 - **Black Pill을 로봇에 꽂기**
 - (트리거 한 번) **자동 실행**
 - 네트워크가 죽어도 **시리얼 콘솔로 복구**
+
+---
+## H/W BOM
+<div style="display: flex; gap: 10px;">
+  <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="520" hspace="4">
+  <img src="https://github.com/user-attachments/assets/fd55af69-040a-479d-8350-95a2807655ee" width="300">
+</div>
+
 
 ---
 
@@ -111,7 +120,7 @@ sudo minicom -D /dev/ttyACM0 -b 115200
 
 ---
 
-## 이 프로젝트가 “강한” 이유
+## 이 USB가 “강한” 이유
 
 - **현장 친화적**: 네트워크/SSH가 불안정해도 “동글 + 시리얼”로 복구 가능
 - **단순한 인터페이스**: Qt/daemon은 그냥 `/dev/*` 파일 I/O
@@ -145,3 +154,11 @@ USB-MACRO/
 
 ## License
 MIT
+
+
+
+
+
+
+
+
