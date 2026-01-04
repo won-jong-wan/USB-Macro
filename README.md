@@ -33,9 +33,11 @@
 
 ---
 ## H/W BOM
-![BOM_picture](https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38)
+<div style="display: flex; gap: 10px;">
+  <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="300">
+  <img src="https://github.com/user-attachments/assets/fd55af69-040a-479d-8350-95a2807655ee" width="300">
+</div>
 
-<img width="353" height="302" alt="스크린샷 2026-01-04 172205" src="https://github.com/user-attachments/assets/c5f19fed-a4cd-43aa-8f07-615d09900cf6" />
 
 ---
 
@@ -151,4 +153,5 @@ USB-MACRO/
 
 ## License
 MIT
+
 
