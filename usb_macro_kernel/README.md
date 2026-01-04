@@ -37,7 +37,7 @@ flowchart TD
     CORE["Linux USB Core<br/>(usbcore)"]
     DRV["Kernel USB Driver<br/>usb_macro.ko"]
     DEV["/dev/team_own_stm32<br/>(Char Device)"]
-    APP["User Application<br/>CLI / Qt"]
+    APP["User Application<br/>"]
 
     STM32 --> EP
     EP --> HW
