@@ -32,6 +32,12 @@
 - 네트워크가 죽어도 **시리얼 콘솔로 복구**
 
 ---
+## H/W BOM
+![BOM_picture](https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38)
+
+<img width="353" height="302" alt="스크린샷 2026-01-04 172205" src="https://github.com/user-attachments/assets/c5f19fed-a4cd-43aa-8f07-615d09900cf6" />
+
+---
 
 ## 어떻게 돌아가요?
 
@@ -145,3 +151,4 @@ USB-MACRO/
 
 ## License
 MIT
+
