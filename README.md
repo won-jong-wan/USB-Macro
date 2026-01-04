@@ -29,3 +29,6 @@
   * 프로그램 실행 시 두 개의 프로세스를 생성하면서 시작
   * 명령어에 sudo(예 : sudo apt update, sudo apt upgrade)가 있으면 Root(#)프로세스에서 명령어 실행
   * sudo 를 지워주면서(sudo apt update -> apt update) 비밀번호를 입력하지 않고 명령어 실행
+ 
+
+
