@@ -11,7 +11,7 @@
 
 ## ⚡일반 모드
 
-![Vendor Interface](usb_webp/vendor.webp)
+![Vendor Interface](https://media.githubusercontent.com/media/won-jong-wan/USB-Macro/daemon-dev/usb_webp/vendor.webp)
 
 ### ✨ 주요 기능
 * 1️⃣ USB 자동 감지 및 연결
