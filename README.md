@@ -37,8 +37,8 @@
 ---
 ## H/W BOM
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="600" hspace="10">
-  <img src="https://github.com/user-attachments/assets/fd55af69-040a-479d-8350-95a2807655ee" width="400">
+  <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="100%" hspace="10">
+  <img src="https://github.com/user-attachments/assets/fd55af69-040a-479d-8350-95a2807655ee" width="100%">
 </p>
 
 
