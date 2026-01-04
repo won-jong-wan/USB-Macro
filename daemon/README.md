@@ -4,14 +4,12 @@
 - STM32 마이크로컨트롤러와 라즈베리파이 간 자작 커널 드라이버 기반 USB 통신을 통해 명령어 자동 실행 시스템에서 명령어를 실행하는 유저 애플리케이션입니다.
 
 
-
-
-
-
-
 ## ⚡일반 모드
 
 ![Vendor](https://media.githubusercontent.com/media/won-jong-wan/USB-Macro/daemon-dev/usb_webp/vendor.webp)
+
+<img width="1166" height="1301" alt="image" src="https://github.com/user-attachments/assets/291ae0ee-1c81-4be4-8830-568278f8cc80" />
+
 
 ### ✨ 주요 기능
 * 1️⃣ USB 자동 감지 및 연결
@@ -46,8 +44,7 @@
 
 ### 📌 CDC 모드란?
 **CDC (Communications Device Class)** 모드는 네트워크가 단절된 긴급 상황에서 STM32-Raspberry Pi 간 USB를 통해 **직접 터미널에 접속**할 수 있는 백업 시스템입니다.
-
-
+ 
 ### 🎯 사용 목적
 
 | 상황 | 설명 |
@@ -64,3 +61,18 @@
 |------|----------|----------|
 | **일반 모드**<br>(Primary) | STM32 → Custom Driver → /dev/team_own_stm32 → usb_app | 자동 명령어 실행 |
 | **CDC 모드**<br>(Emergency) | STM32 → USB CDC ACM → /dev/ttyACM0 → agetty → Shell | 수동 터미널 접속 |
+
+### 아쉬운 점
+* htop, ls 등 다양한 명령어는 가능했지만, Vi, Nano 같이 코드 작성할 수 있는 편집기들을 사용한 것에서는 @@@와 같은 쓰레기 문자가 생기거나, I(Insert)를 해도 입력이 제대로 안되는 아쉬움이 있었음 
+
+### agetty (Alternative Getty)
+**agetty**는 Linux 시스템에서 **시리얼 포트(Serial Port)에 로그인 프롬프트를 제공**하는 프로그램입니다.
+
+"Getty"는 "Get Teletype"의 약자로, 전통적으로 터미널 장치에 로그인 화면을 띄워주는 역할을 합니다.
+
+### **1️⃣ 일반 로그인 vs 시리얼 로그인**
+[일반 로그인 (SSH)]
+키보드/네트워크 → Linux → 로그인 프롬프트
+
+[시리얼 로그인 (agetty)]
+USB CDC → /dev/ttyACM0 → agetty → 로그인 프롬프트
