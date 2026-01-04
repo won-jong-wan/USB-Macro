@@ -4,7 +4,7 @@
 **USB-MACRO는 TurtleBot(Raspberry Pi)를 “USB 동글(Black Pill)”로 자동 실행/복구까지 하는 Smart USB Bridge 입니다.**
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/073ce760-7c3b-4340-8ca4-f8242566badd" width="400">
+  <img src="https://github.com/user-attachments/assets/073ce760-7c3b-4340-8ca4-f8242566badd" width="100%">
 </p>
 
 
