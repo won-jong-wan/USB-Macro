@@ -10,6 +10,9 @@
 
 
 ## ⚡일반 모드
+
+![Vendor Interface](usb_webp/vendor.webp)
+
 ### ✨ 주요 기능
 * 1️⃣ USB 자동 감지 및 연결
   *  **Udev 기반 모니터링** : USB 모듈 장치 연결 및 해제를 실시간으로 감지
