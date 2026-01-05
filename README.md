@@ -59,27 +59,8 @@
 </div>
 
 
-
-
 ---
 
-## 어떻게 돌아가요?
-
-핵심은 **Store-and-Forward** 입니다.
-
-1) **STORE (PC)**: PC(Qt)가 256Byte “명령 패킷”을 Vendor로 전송  
-2) **STORE (Dongle)**: Black Pill이 받은 패킷을 **SD에 저장**  
-3) **RUN (Robot)**: Black Pill을 로봇(RPi)에 연결하면, 저장된 패킷을 Vendor로 다시 보내고(RPi가 수신), daemon이 실행
-
-```mermaid
-%%{init: {"themeVariables": {"fontSize": "16px"}, "flowchart": {"useMaxWidth": true, "nodeSpacing": 40, "rankSpacing": 50}}}%%
-flowchart LR
-  PC["PC<br/>Qt + Kernel Driver"] -->|"Vendor 256Byte<br/>STORE"| MCU["Black Pill<br/>Vendor + SD Store"]
-  MCU -->|"Vendor 256Byte<br/>SEND"| RPI["Raspberry Pi<br/>Kernel Driver + daemon"]
-  RPI --> RUN["Execute<br/>ROS2 / system cmd"]
-```
-
----
 
 ## 2가지 모드
 
@@ -175,6 +156,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
