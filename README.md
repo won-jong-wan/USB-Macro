@@ -38,7 +38,9 @@
 <p align="center">
   <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="100%">
 <div align="center">
+ 
 ---
+
 <table style="width:80%;">
   <thead>
     <tr>
@@ -156,6 +158,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
