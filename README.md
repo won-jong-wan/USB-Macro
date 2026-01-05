@@ -1,10 +1,12 @@
-# USB-MACRO ☕
+# USB-MACRO 
 
-**SSH 붙잡고 ROS 환경 세팅하느라 시간 쓰지 말고, USB 하나 꽂고 커피 한 잔 하세요.**  
-**USB-MACRO는 TurtleBot(Raspberry Pi)를 “USB 동글(Black Pill)”로 자동 실행/복구까지 하는 Smart USB Bridge 입니다.**
+ 
 
-<center>
-<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/16ff0826-228a-4b60-b31c-b8ce300529d9" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/073ce760-7c3b-4340-8ca4-f8242566badd" width="100%">
+</p>
+
+
 
 
 
@@ -33,10 +35,30 @@
 
 ---
 ## H/W BOM
-<div style="display: flex; gap: 10px;">
-  <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="520" hspace="4">
-  <img src="https://github.com/user-attachments/assets/fd55af69-040a-479d-8350-95a2807655ee" width="300">
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="100%">
+<div align="center">
+
+<table>
+  <thead>
+    <tr>
+      <th><big><b>부품명</b></big></th>
+      <th><big><b>역할</b></big></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><big>로터리 엔코더</big></td><td><big>사용자 입력 장치</big></td></tr>
+    <tr><td><big>SSD1306 OLED</big></td><td><big>시스템 상태 출력 디스플레이</big></td></tr>
+    <tr><td><big>HAM1927 (SD카드 모듈)</big></td><td><big>외부 저장 장치</big></td></tr>
+    <tr><td><big>Black Pill (STM32F411)</big></td><td><big>MCU</big></td></tr>
+    <tr><td><big>라즈베리파이 디버그 프로브</big></td><td><big>펌웨어 업데이트 및 추가적인 CDC 지원</big></td></tr>
+    <tr><td><big>터틀봇3</big></td><td><big>최종 타겟 호스트(Host)</big></td></tr>
+  </tbody>
+</table>
+
 </div>
+
+
 
 
 ---
@@ -66,16 +88,16 @@ flowchart LR
 - Dongle: 수신한 패킷을 SD에 저장
 - Robot: `/dev/custom_usb_rpi` 로 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
 
+<img width="2890" height="815" alt="image" src="https://github.com/user-attachments/assets/2170902d-aa80-486e-83f7-61e9843547cd" />
+
+
 ### 🆘 EMERGENCY: 네트워크 죽어도 복구 (CDC↔UART Serial Console)
 - Black Pill이 **CDC 모드**로 전환
 - PC는 **가상 COM 포트**로 접속
 - CDC 데이터가 UART로 브릿지되어 RPi의 **agetty 시리얼 콘솔**로 연결
 
-```mermaid
-%%{init: {"themeVariables": {"fontSize": "16px"}, "flowchart": {"useMaxWidth": true, "nodeSpacing": 35, "rankSpacing": 45}}}%%
-flowchart LR
-  PC["PC Terminal"] <-->|"USB CDC"| MCU["Black Pill<br/>CDC↔UART Bridge"] <-->|"UART"| RPI["RPi agetty"] --> SHELL["Shell / Recovery"]
-```
+<img width="2592" height="316" alt="image" src="https://github.com/user-attachments/assets/36be97b2-150e-45ed-81db-9d8bc961556f" />
+
 
 ---
 
@@ -153,6 +175,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
