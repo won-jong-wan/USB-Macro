@@ -1,8 +1,5 @@
-"https://github.com/user-attachments/assets/dcc61d6c-d11a-42eb-b584-48ec36107c21"
+
 # USB-MACRO
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/dcc61d6c-d11a-42eb-b584-48ec36107c21" width="100%" alt="USB-MACRO Banner">
-</p>
 # Visual Command Editor (비주얼 커맨드 에디터)
 
 장치 제어 명령어를 리스트 형태로 작성하고, 이를 **노드 그래프(Flowchart)** 형태로 실시간 시각화하여 관리하는 Qt 기반 데스크톱 애플리케이션입니다.
