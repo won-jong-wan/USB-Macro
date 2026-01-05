@@ -41,8 +41,8 @@
  
 ---
 <div align="center">
- 
-<table width="80%;">
+
+<table>
   <thead>
     <tr>
       <th><big><b>부품명</b></big></th>
