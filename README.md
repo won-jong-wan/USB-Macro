@@ -69,16 +69,16 @@ flowchart LR
 - Dongle: 수신한 패킷을 SD에 저장
 - Robot: `/dev/custom_usb_rpi` 로 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
 
+<img width="2890" height="815" alt="image" src="https://github.com/user-attachments/assets/2170902d-aa80-486e-83f7-61e9843547cd" />
+
+
 ### 🆘 EMERGENCY: 네트워크 죽어도 복구 (CDC↔UART Serial Console)
 - Black Pill이 **CDC 모드**로 전환
 - PC는 **가상 COM 포트**로 접속
 - CDC 데이터가 UART로 브릿지되어 RPi의 **agetty 시리얼 콘솔**로 연결
 
-```mermaid
-%%{init: {"themeVariables": {"fontSize": "16px"}, "flowchart": {"useMaxWidth": true, "nodeSpacing": 35, "rankSpacing": 45}}}%%
-flowchart LR
-  PC["PC Terminal"] <-->|"USB CDC"| MCU["Black Pill<br/>CDC↔UART Bridge"] <-->|"UART"| RPI["RPi agetty"] --> SHELL["Shell / Recovery"]
-```
+<img width="2592" height="316" alt="image" src="https://github.com/user-attachments/assets/36be97b2-150e-45ed-81db-9d8bc961556f" />
+
 
 ---
 
