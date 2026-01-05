@@ -67,7 +67,7 @@
 
 ## 2가지 모드
 
-### ✅ MAIN: 자동 실행 (Vendor 256Byte Store-and-Forward)
+### ✅ MAIN: 자동 실행 (Vendor 256Byte)
 - PC: `/dev/custom_usb_pc` 로 256Byte 패킷 write
 - Dongle: 수신한 패킷을 SD에 저장
 - Robot: `/dev/custom_usb_rpi` 로 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
@@ -125,15 +125,6 @@ sudo minicom -D /dev/ttyACM0 -b 115200
 
 ---
 
-## 이 USB가 “강한” 이유
-
-- **현장 친화적**: 네트워크/SSH가 불안정해도 “동글 + 시리얼”로 복구 가능
-- **단순한 인터페이스**: Qt/daemon은 그냥 `/dev/*` 파일 I/O
-- **고정 프레임(256Byte)**: 패킷 경계/검증이 쉬워서 디버깅이 편함
-- **재현성**: PC에서 적재한 패킷을 그대로 저장/전송하니 데모/테스트가 안정적
-
----
-
 ## 레포 구조 (예시)
 
 ```text
@@ -159,6 +150,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
