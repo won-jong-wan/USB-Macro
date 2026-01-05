@@ -39,24 +39,22 @@
   <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="100%">
 <div align="center">
 
-<table>
+<table style="width: 100%; font-size: 20px;">
   <thead>
     <tr>
-      <th><big><b>부품명</b></big></th>
-      <th><big><b>역할</b></big></th>
+      <th><b>부품명</b></th>
+      <th><b>역할</b></th>
     </tr>
   </thead>
   <tbody>
-    <tr><td><big>로터리 엔코더</big></td><td><big>사용자 입력 장치</big></td></tr>
-    <tr><td><big>SSD1306 OLED</big></td><td><big>시스템 상태 출력 디스플레이</big></td></tr>
-    <tr><td><big>HAM1927 (SD카드 모듈)</big></td><td><big>외부 저장 장치</big></td></tr>
-    <tr><td><big>Black Pill (STM32F411)</big></td><td><big>MCU</big></td></tr>
-    <tr><td><big>라즈베리파이 디버그 프로브</big></td><td><big>펌웨어 업데이트 및 추가적인 CDC 지원</big></td></tr>
-    <tr><td><big>터틀봇3</big></td><td><big>최종 타겟 호스트(Host)</big></td></tr>
+    <tr><td>로터리 엔코더</td><td>사용자 입력 장치</td></tr>
+    <tr><td>SSD1306 OLED</td><td>시스템 상태 출력 디스플레이</td></tr>
+    <tr><td>HAM1927 (SD카드 모듈)</td><td>외부 저장 장치</td></tr>
+    <tr><td>Black Pill (STM32F411)</td><td>MCU</td></tr>
+    <tr><td>라즈베리파이 디버그 프로브</td><td>펌웨어 업데이트 및 추가적인 CDC 지원</td></tr>
+    <tr><td>터틀봇3</td><td>최종 타겟 호스트(Host)</td></tr>
   </tbody>
 </table>
-
-</div>
 
 ---
 
@@ -154,6 +152,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
