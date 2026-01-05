@@ -27,12 +27,12 @@
 - 터미널 여러 개 켜서 bringup / 센서 / 노드 실행  
 - 네트워크 끊기면… 끝 (현장 멘붕)
 
-### After ☕
+### After ☕ 
+[작동 영상](https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA)
 - PC에서 버튼 클릭(명령어 적재)
 - **Black Pill을 로봇에 꽂기**
 - (트리거 한 번) **자동 실행**
 - 네트워크가 죽어도 **시리얼 콘솔로 복구**
-[작동 영상](https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA)
 ---
 ## H/W BOM
 <p align="center">
@@ -150,6 +150,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
