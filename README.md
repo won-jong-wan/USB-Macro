@@ -32,7 +32,7 @@
 - **Black Pill을 로봇에 꽂기**
 - (트리거 한 번) **자동 실행**
 - 네트워크가 죽어도 **시리얼 콘솔로 복구**
-https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA
+[작동 영상](https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA)
 ---
 ## H/W BOM
 <p align="center">
@@ -150,6 +150,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
