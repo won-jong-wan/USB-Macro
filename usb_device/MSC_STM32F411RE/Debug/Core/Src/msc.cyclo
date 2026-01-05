@@ -1,6 +1,0 @@
-../Core/Src/msc.c:31:6:tud_msc_inquiry_cb	1
-../Core/Src/msc.c:40:6:tud_msc_test_unit_ready_cb	1
-../Core/Src/msc.c:47:6:tud_msc_capacity_cb	1
-../Core/Src/msc.c:56:9:tud_msc_read10_cb	2
-../Core/Src/msc.c:70:9:tud_msc_write10_cb	2
-../Core/Src/msc.c:84:9:tud_msc_scsi_cb	8

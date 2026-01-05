@@ -1,0 +1,2 @@
+usb_webp/*.webp filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text

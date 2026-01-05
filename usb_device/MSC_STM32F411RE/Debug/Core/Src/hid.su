@@ -1,3 +1,0 @@
-../Core/Src/hid.c:11:6:tud_hid_set_report_cb	16	static
-../Core/Src/hid.c:17:10:tud_hid_get_report_cb	16	static
-../Core/Src/hid.c:22:6:hid_task	32	static
