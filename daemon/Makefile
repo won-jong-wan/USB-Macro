@@ -1,9 +1,10 @@
 # 컴파일러 및 플래그 설정
 CC = gcc
-CFLAGS = -Wall -g -Iheader
+# [수정됨] 헤더 파일 포함 경로 변경 (header -> core/header)
+CFLAGS = -Wall -g -Icore/header
 
-# 디렉토리 경로 변수 설정
-SRC_DIR = source
+# [수정됨] 소스 디렉토리 경로 변경 (source -> core/source)
+SRC_DIR = core/source
 OBJ_DIR = build
 BIN_DIR = build
 
@@ -12,14 +13,13 @@ TARGET = $(BIN_DIR)/sim
 # ★ 중요: udev 라이브러리 링크
 LIBS = -ludev 
 
-# [수정됨] 소스 파일 목록 교체
-# usb_sim.c 삭제 -> monitor_udev.c, driver_stm32.c 추가
+# 소스 파일 목록
 SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/executor.c \
        $(SRC_DIR)/monitor_udev.c \
        $(SRC_DIR)/driver_stm32.c
 
-# 오브젝트 파일 목록 (자동 변환)
+# 오브젝트 파일 목록 (자동 변환: core/source/%.c -> build/%.o)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 # 기본 타겟
@@ -37,11 +37,11 @@ $(TARGET): $(OBJS)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# [수정됨] 헤더 의존성 명시 (선택 사항이지만 안전을 위해 갱신)
-$(OBJ_DIR)/main.o: $(SRC_DIR)/main.c header/monitor.h header/hw_driver.h header/executor.h header/common.h
-$(OBJ_DIR)/executor.o: $(SRC_DIR)/executor.c header/executor.h
-$(OBJ_DIR)/monitor_udev.o: $(SRC_DIR)/monitor_udev.c header/monitor.h
-$(OBJ_DIR)/driver_stm32.o: $(SRC_DIR)/driver_stm32.c header/hw_driver.h header/common.h
+# [수정됨] 헤더 의존성 경로 업데이트 (header/ -> core/header/)
+$(OBJ_DIR)/main.o: $(SRC_DIR)/main.c core/header/monitor.h core/header/hw_driver.h core/header/executor.h core/header/common.h
+$(OBJ_DIR)/executor.o: $(SRC_DIR)/executor.c core/header/executor.h
+$(OBJ_DIR)/monitor_udev.o: $(SRC_DIR)/monitor_udev.c core/header/monitor.h
+$(OBJ_DIR)/driver_stm32.o: $(SRC_DIR)/driver_stm32.c core/header/hw_driver.h core/header/common.h
 
 # 청소
 clean:
