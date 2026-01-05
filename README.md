@@ -40,8 +40,9 @@
 <div align="center">
  
 ---
-
-<table style="width:100%;">
+<div align="center">
+ 
+<table width="80%;">
   <thead>
     <tr>
       <th><big><b>부품명</b></big></th>
@@ -158,6 +159,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
