@@ -37,16 +37,23 @@
 ## H/W BOM
 <p align="center">
   <img src="https://github.com/user-attachments/assets/00319191-aee3-46ba-9975-b15120f0ba38" width="100%" hspace="10">
-  | 부품명 | 역할 |
-|---|---|
-| 로터리 엔코더 | 사용자 입력 장치 |
-| SSD1306 OLED | 시스템 상태 출력 디스플레이 |
-| HAM1927 (SD카드 모듈) | 외부 저장 장치 |
-| Black Pill (STM32F411) | MCU |
-| 라즈베리파이 디버그 프로브 | 펌웨어 업데이트 및 추가적인 CDC 지원 |
-| 터틀봇3 | 최종 타겟 호스트(Host) |
+<table>
+  <thead>
+    <tr>
+      <th>부품명</th>
+      <th>역할</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>로터리 엔코더</td><td>사용자 입력 장치</td></tr>
+    <tr><td>SSD1306 OLED</td><td>시스템 상태 출력 디스플레이</td></tr>
+    <tr><td>HAM1927 (SD카드 모듈)</td><td>외부 저장 장치</td></tr>
+    <tr><td>Black Pill (STM32F411)</td><td>MCU</td></tr>
+    <tr><td>라즈베리파이 디버그 프로브</td><td>펌웨어 업데이트 및 추가적인 CDC 지원</td></tr>
+    <tr><td>터틀봇3</td><td>최종 타겟 호스트(Host)</td></tr>
+  </tbody>
+</table>
 
-</p>
 
 
 ---
