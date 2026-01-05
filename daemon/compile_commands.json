@@ -4,14 +4,59 @@
       "/usr/bin/gcc",
       "-Wall",
       "-g",
-      "-Iheader",
+      "-Icore/header",
+      "-c",
+      "-o",
+      "build/main.o",
+      "core/source/main.c"
+    ],
+    "directory": "/home/burger/USB-Macro/daemon",
+    "file": "/home/burger/USB-Macro/daemon/core/source/main.c",
+    "output": "/home/burger/USB-Macro/daemon/build/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-g",
+      "-Icore/header",
       "-c",
       "-o",
       "build/executor.o",
-      "source/executor.c"
+      "core/source/executor.c"
     ],
-    "directory": "/home/burger/RPI_KERNEL_WORKSPACE/c/poll",
-    "file": "/home/burger/RPI_KERNEL_WORKSPACE/c/poll/source/executor.c",
-    "output": "/home/burger/RPI_KERNEL_WORKSPACE/c/poll/build/executor.o"
+    "directory": "/home/burger/USB-Macro/daemon",
+    "file": "/home/burger/USB-Macro/daemon/core/source/executor.c",
+    "output": "/home/burger/USB-Macro/daemon/build/executor.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-g",
+      "-Icore/header",
+      "-c",
+      "-o",
+      "build/monitor_udev.o",
+      "core/source/monitor_udev.c"
+    ],
+    "directory": "/home/burger/USB-Macro/daemon",
+    "file": "/home/burger/USB-Macro/daemon/core/source/monitor_udev.c",
+    "output": "/home/burger/USB-Macro/daemon/build/monitor_udev.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-g",
+      "-Icore/header",
+      "-c",
+      "-o",
+      "build/driver_stm32.o",
+      "core/source/driver_stm32.c"
+    ],
+    "directory": "/home/burger/USB-Macro/daemon",
+    "file": "/home/burger/USB-Macro/daemon/core/source/driver_stm32.c",
+    "output": "/home/burger/USB-Macro/daemon/build/driver_stm32.o"
   }
 ]
