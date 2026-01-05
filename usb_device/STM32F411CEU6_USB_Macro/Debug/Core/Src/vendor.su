@@ -1,0 +1,4 @@
+../Core/Inc/custum_t.h:79:20:print_venpack	16	static
+../Core/Src/vendor.c:21:6:vendor_info_update	32	static
+../Core/Src/vendor.c:40:6:tud_vendor_rx_cb	32	static
+../Core/Src/vendor.c:84:6:ven_send	32	static
