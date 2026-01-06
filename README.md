@@ -100,40 +100,23 @@
 
 ## Quick Start 
 
-
-### 1) 펌웨어 업로드
-```bash
-cd firmware
-make
-# ST-Link/DFU 등으로 flash
-```
-
-### 2) PC Qt Application (Command STORE)
+### 1) PC Qt Application (Command STORE)
 ```bash
 wget https://github.com/won-jong-wan/USB-Macro/releases/download/v1.0.0/USBMacroCommandStudio-x86_64.AppImage
 chmod +x USBMacroCommandStudio-x86_64.AppImage
 sudo ./USBMacroCommandStudio-x86_64.AppImage
 ```
 
-### 3) Daemon Deployment
+### 2) Daemon Deployment
 ```bash
 cd pc_client_qt
 ./CUSTOM_USB_CLIENT
 # Qt에서 명령 생성 → /dev/custom_usb_pc로 256Byte 전송
 ```
 
-### 4) 로봇에서 실행 (RUN)
-```bash
-cd rpi_daemon
-python3 main.py
-# 저장된 패킷이 들어오면 daemon이 실행
-```
-
-### 5) Recovery (Optional)
-```bash
-# 예: Linux
-sudo minicom -D /dev/ttyACM0 -b 115200
-```
+### 3) 펌웨어 업로드
+usb_device/STM32F411CEU6_USB_Macro
+STM32CubeIDE 이용하여 업로드
 
 ---
 
@@ -197,6 +180,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
