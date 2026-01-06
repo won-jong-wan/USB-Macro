@@ -162,7 +162,7 @@ USB-MACRO/
 - 명령 생성 및 패킷 적재 (STORE)
 - GUI 기반 커맨드 작성
 
-🔗 https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_writerQt
+🔗 [QT]https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_writerQt
 
 ---
 
@@ -170,7 +170,7 @@ USB-MACRO/
 - CUSTOM USB Vendor Device 제어
 - PC / RPi 공용 커널 드라이버
 
-🔗 https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_kernel
+🔗 [Kernel]https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_kernel
 
 ---
 
@@ -178,16 +178,17 @@ USB-MACRO/
 - Raspberry Pi 상주 데몬
 - 저장된 명령 자동 실행 (RUN)
 
-🔗 https://github.com/won-jong-wan/USB-Macro/tree/main/daemon
+🔗 [Daemon]https://github.com/won-jong-wan/USB-Macro/tree/main/daemon
 
 ---
 
 ### 🧠 Design Notes
 - 구조 설계 및 트레이드오프 기록
 
-🔗 https://github.com/won-jong-wan/USB-Macro/discussions/38
+🔗 [Design]https://github.com/won-jong-wan/USB-Macro/discussions/38
 
 ---
 
 ## License
 MIT
+
