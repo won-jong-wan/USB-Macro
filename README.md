@@ -170,7 +170,7 @@ USB-MACRO/
 - CUSTOM USB Vendor Device 제어
 - PC / RPi 공용 커널 드라이버
 
-[Kernel Driver]https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_kernel
+[Kernel Driver](https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_kernel)
 
 ---
 
@@ -178,19 +178,20 @@ USB-MACRO/
 - Raspberry Pi 상주 데몬
 - 저장된 명령 자동 실행 (RUN)
 
-[Daemon]https://github.com/won-jong-wan/USB-Macro/tree/main/daemon
+[Daemon](https://github.com/won-jong-wan/USB-Macro/tree/main/daemon)
 
 ---
 
 ### 🧠 Design Notes
 - 구조 설계 및 트레이드오프 기록
 
-[Discussion]https://github.com/won-jong-wan/USB-Macro/discussions/38
+[Discussion](https://github.com/won-jong-wan/USB-Macro/discussions/38)
 
 ---
 
 ## License
 MIT
+
 
 
 
