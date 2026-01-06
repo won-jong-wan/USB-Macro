@@ -151,41 +151,43 @@ USB-MACRO/
 
 ---
 
-## 더 자세한 설명(상세/기술 문서)
+## 📚 더 자세한 설명 (상세 / 기술 문서)
 
-메인 README는 “한 번에 이해”가 목표라서 일부 세부를 뺐습니다.  
-**프로토콜/SD 메타(info_struct)/펌웨어 동작 등 깊게 보려면** 아래 문서를 참고하세요.
+메인 README는 **한 번에 전체 구조를 이해하는 것**을 목표로 구성했습니다.  
+구현 세부, 내부 동작, 설계 고민은 아래 문서를 참고하세요.
 
-- `docs/README_TECHNICAL.md` (상세 설계 문서로 이동 추천)
-- 설계 고민 기록: https://github.com/won-jong-wan/USB-Macro/discussions/38
+---
+
+### 🖥️ PC (Qt Application)
+- 명령 생성 및 패킷 적재 (STORE)
+- GUI 기반 커맨드 작성
+
+🔗 https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_writerQt
+
+---
+
+### 🐧 Kernel (Custom USB Driver)
+- CUSTOM USB Vendor Device 제어
+- PC / RPi 공용 커널 드라이버
+
+🔗 https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_kernel
+
+---
+
+### 🤖 Daemon (Robot Executor)
+- Raspberry Pi 상주 데몬
+- 저장된 명령 자동 실행 (RUN)
+
+🔗 https://github.com/won-jong-wan/USB-Macro/tree/main/daemon
+
+---
+
+### 🧠 Design Notes
+- 구조 설계 및 트레이드오프 기록
+
+🔗 https://github.com/won-jong-wan/USB-Macro/discussions/38
 
 ---
 
 ## License
 MIT
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
