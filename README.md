@@ -110,10 +110,9 @@ make
 
 ### 2) PC Qt Application (Command STORE)
 ```bash
-cd kernel_driver
-make
-sudo insmod custom_usb.ko
-ls -l /dev/custom_usb*
+wget https://github.com/won-jong-wan/USB-Macro/releases/download/v1.0.0/USBMacroCommandStudio-x86_64.AppImage
+chmod +x USBMacroCommandStudio-x86_64.AppImage
+sudo ./USBMacroCommandStudio-x86_64.AppImage
 ```
 
 ### 3) Daemon Deployment
@@ -190,6 +189,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
