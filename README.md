@@ -155,7 +155,13 @@ USB-MACRO/
 
 메인 README는 **한 번에 전체 구조를 이해하는 것**을 목표로 구성했습니다.  
 구현 세부, 내부 동작, 설계 고민은 아래 문서를 참고하세요.
+---
 
+### 🖥️ PC (Qt Application)
+- 명령 생성 및 패킷 적재 (STORE)
+- GUI 기반 커맨드 작성
+
+[STM32(black pill)](https://github.com/won-jong-wan/USB-Macro/tree/README-dev)
 ---
 
 ### 🖥️ PC (Qt Application)
@@ -191,6 +197,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
