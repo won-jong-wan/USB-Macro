@@ -81,9 +81,9 @@
 ## 2가지 모드
 
 ### ✅ MAIN: 자동 실행 (Vendor 256Byte)
-- PC: `/dev/custom_usb_pc` 로 256Byte 패킷 write
+- PC: 256Byte 패킷 write
 - Dongle: 수신한 패킷을 SD에 저장
-- Robot: `/dev/custom_usb_rpi` 로 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
+- Robot: 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
 
 <img width="2890" height="815" alt="image" src="https://github.com/user-attachments/assets/2170902d-aa80-486e-83f7-61e9843547cd" />
 
@@ -148,7 +148,7 @@ USB-MACRO/
 ---
 ### 🔌 STM32 Device (Black Pill)
 - CUSTOM USB Vendor Device 펌웨어
-- PC로부터 패킷 수신 및 내부 저장 (256B frame)
+- PC로부터 패킷 수신 및 내부 저장 (256Byte frame)
 - Robot 연결 시 패킷 전달 트리거 역할
 
 [STM32 device(black pill)](https://github.com/won-jong-wan/USB-Macro/tree/main/usb_device)
@@ -188,6 +188,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
