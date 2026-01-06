@@ -7,8 +7,8 @@
 ## ⚡일반 모드
 ![Vendor](./usb_webp/vendor_ex.webp)
 
-<img width="1166" height="1301" alt="image" src="https://github.com/user-attachments/assets/291ae0ee-1c81-4be4-8830-568278f8cc80" />
-
+![State](./usb_webp/state.png)| ![exec](./usb_webp/exec.png)
+---|---|
 
 ### ✨ 주요 기능
 * 1️⃣ USB 자동 감지 및 연결
@@ -61,17 +61,17 @@
 | **일반 모드**<br>(Primary) | STM32 → Custom Driver → /dev/team_own_stm32 → usb_app | 자동 명령어 실행 |
 | **CDC 모드**<br>(Emergency) | STM32 → USB CDC ACM → /dev/ttyACM0 → agetty → Shell | 수동 터미널 접속 |
 
-### 아쉬운 점
-* htop, ls 등 다양한 명령어는 가능했지만, Vi, Nano 같이 코드 작성할 수 있는 편집기들을 사용한 것에서는 @@@와 같은 쓰레기 문자가 생기거나, I(Insert)를 해도 입력이 제대로 안되는 아쉬움이 있었음 
+### Trouble
+* Vi, Nano 같이 코드 작성할 수 있는 편집기 사용시 @@@와 같은 쓰레기 문자가 생기거나, I(Insert)를 해도 입력이 제대로 안됨
 
-### agetty (Alternative Getty)
-**agetty**는 Linux 시스템에서 **시리얼 포트(Serial Port)에 로그인 프롬프트를 제공**하는 프로그램입니다.
-
-"Getty"는 "Get Teletype"의 약자로, 전통적으로 터미널 장치에 로그인 화면을 띄워주는 역할을 합니다.
-
-### **1️⃣ 일반 로그인 vs 시리얼 로그인**
+### **일반 로그인 vs 시리얼 로그인**
 [일반 로그인 (SSH)]
 키보드/네트워크 → Linux → 로그인 프롬프트
 
 [시리얼 로그인 (agetty)]
 USB CDC → /dev/ttyACM0 → agetty → 로그인 프롬프트
+
+### agetty (Alternative Getty)
+**agetty**는 Linux 시스템에서 **시리얼 포트(Serial Port)에 로그인 프롬프트를 제공**하는 프로그램
+
+"Getty"는 "Get Teletype"의 약자로, 전통적으로 터미널 장치에 로그인 화면을 띄워주는 역할을 합니다.
