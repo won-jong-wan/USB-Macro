@@ -32,7 +32,7 @@ MODULE_DEVICE_TABLE(usb, usb_device_table);
 struct stm32_usb_dev {
     struct usb_device            *udev;
     struct usb_interface         *interface;
-
+    
     
     struct usb_endpoint_descriptor *bulk_in;
     struct usb_endpoint_descriptor *bulk_out;
@@ -51,6 +51,7 @@ struct stm32_usb_dev {
 
     atomic_t open_count;
     wait_queue_head_t close_wq;
+    atomic_t cleanup_done;
 
 };
 static void stm32_bulk_in_callback(struct urb *urb);
@@ -64,6 +65,36 @@ static dev_t stm32_dev_t;
 static struct class *stm32_class;
 static struct stm32_usb_dev *g_dev;   // 예제 단순화를 위해 전역 1개만
 // static atomic_t dev_minor_alloc = ATOMIC_INIT(0); /* 단일이면 없어도 됨 */
+
+static void stm32_usb_free(struct stm32_usb_dev *dev)
+{
+    /* 2번 호출 방지 */
+    if (atomic_xchg(&dev->cleanup_done, 1))
+        return;
+
+    /* URB는 kill/free 모두 여기서 */
+    if (dev->bulk_in_urb) {
+        usb_kill_urb(dev->bulk_in_urb);
+        usb_free_urb(dev->bulk_in_urb);
+        dev->bulk_in_urb = NULL;
+    }
+
+    /* char device 정리 */
+    device_destroy(stm32_class, stm32_dev_t);
+    cdev_del(&dev->cdev);
+
+    /* RX 자원 */
+    kfree(dev->bulk_in_buffer);
+    dev->bulk_in_buffer = NULL;
+    kfifo_free(&dev->rx_fifo);
+
+    /* usb/dev */
+    usb_put_dev(dev->udev);
+    dev->udev = NULL;
+
+    g_dev = NULL;
+    kfree(dev);
+}
 
 // ---------- write 완료 콜백 ----------
 static void stm32_usb_write_complete(struct urb *urb)
@@ -90,6 +121,9 @@ static ssize_t stm32_usb_write(struct file *file,
     if (!dev || !dev->udev)
         return -ENODEV;
 
+    if (atomic_read(&dev->disconnected))
+        return -ENODEV;
+
     if (!count)
         return 0;
 
@@ -113,6 +147,13 @@ static ssize_t stm32_usb_write(struct file *file,
     }
 
     mutex_lock(&dev->io_mutex);
+ /* unplug race 방어: 락 잡은 뒤 다시 확인 */
+    if (atomic_read(&dev->disconnected) || !dev->udev) {
+        mutex_unlock(&dev->io_mutex);
+        kfree(buf);
+        usb_free_urb(urb);
+        return -ENODEV;
+    }
 
     usb_fill_bulk_urb(urb,
                       dev->udev,
@@ -212,11 +253,24 @@ static int stm32_usb_open(struct inode *inode, struct file *file)
 
 static int stm32_usb_release(struct inode *inode, struct file *file)
 {
-    struct stm32_usb_dev *dev = file->private_data;
-    if (dev) {
-        if (atomic_dec_and_test(&dev->open_count))
-            wake_up_interruptible(&dev->close_wq);
+   struct stm32_usb_dev *dev = file->private_data;
+    bool do_cleanup = false;
+
+    if (!dev)
+        return 0;
+
+    file->private_data = NULL;
+
+    if (atomic_dec_and_test(&dev->open_count)) {
+        wake_up_interruptible(&dev->close_wq);
+
+        if (atomic_read(&dev->disconnected))
+            do_cleanup = true;
     }
+
+    if (do_cleanup)
+        stm32_usb_free(dev);
+
     return 0;
 }
 
@@ -240,12 +294,13 @@ static int stm32_usb_probe(struct usb_interface *interface,
     struct stm32_usb_dev *dev;
     struct device *d;
     int i, retval;
+    
     printk(KERN_INFO DRIVER_NAME ": Device connected(VID=0x%04x PID=0x%04x)\n", id->idVendor, id->idProduct);
 
     dev = kzalloc(sizeof(*dev), GFP_KERNEL);
     if (!dev)
         return -ENOMEM;
-
+    atomic_set(&dev->cleanup_done, 0);
     dev->udev      = usb_get_dev(udev);
     dev->interface = interface;
     mutex_init(&dev->io_mutex);
@@ -267,14 +322,14 @@ static int stm32_usb_probe(struct usb_interface *interface,
 
     if (!dev->bulk_in || !dev->bulk_out) {
         retval = -ENODEV;
-        goto err_putdev;
+        goto err_udev;
     }
 
     dev->bulk_in_size   = usb_endpoint_maxp(dev->bulk_in);
     dev->bulk_in_buffer = kzalloc(dev->bulk_in_size, GFP_KERNEL);
     if (!dev->bulk_in_buffer) {
         retval = -ENOMEM;
-        goto err_putdev;
+        goto err_udev;
     }
 
     dev->bulk_in_urb = usb_alloc_urb(0, GFP_KERNEL);
@@ -328,7 +383,7 @@ err_urb:
 err_inbuf:
     kfree(dev->bulk_in_buffer);
     dev->bulk_in_buffer = NULL;
-err_putdev:
+err_udev:
     usb_put_dev(dev->udev);
     kfree(dev);
     return retval;
@@ -338,45 +393,28 @@ err_putdev:
 // ---------- USB disconnect ----------
 static void stm32_usb_disconnect(struct usb_interface *interface)
 {
-    struct stm32_usb_dev *dev = usb_get_intfdata(interface);
+     struct stm32_usb_dev *dev = usb_get_intfdata(interface);
 
     printk(KERN_INFO DRIVER_NAME ": Device disconnect\n");
-
     if (!dev)
         return;
 
     usb_set_intfdata(interface, NULL);
 
-    /* 더 이상 IO 불가 표시 + read 깨우기 */
     atomic_set(&dev->disconnected, 1);
+
+    /* read/poll 깨우기 */
     wake_up_interruptible(&dev->read_wq);
 
-    /* URB 중단(콜백 더 이상 실행 X) */
-    if (dev->bulk_in_urb) {
+    /* 진행 중 URB 중단 (free는 cleanup에서) */
+    if (dev->bulk_in_urb)
         usb_kill_urb(dev->bulk_in_urb);
-        usb_free_urb(dev->bulk_in_urb);
-        dev->bulk_in_urb = NULL;
-    }
 
-    /* 열린 fd가 닫히길 기다림: interruptible보단 timeout 추천 */
-    wait_event_timeout(dev->close_wq,
-                       atomic_read(&dev->open_count) == 0,
-                       msecs_to_jiffies(2000));
+    /* 열린 fd가 없으면 지금 바로 정리 가능 */
+    if (atomic_read(&dev->open_count) == 0)
+        stm32_usb_free(dev);
 
-    /* char device 정리 */
-    device_destroy(stm32_class, stm32_dev_t);
-    cdev_del(&dev->cdev);
-
-    /* RX 자원 해제 */
-    kfree(dev->bulk_in_buffer);
-    dev->bulk_in_buffer = NULL;
-    kfifo_free(&dev->rx_fifo);
-
-    /* usb/dev 정리 */
-    usb_put_dev(dev->udev);
-
-    g_dev = NULL;
-    kfree(dev);
+    /* open_count 남아있으면 release에서 정리 */
 }
 
 
@@ -565,4 +603,4 @@ module_exit(stm32_usb_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Team OWN");
-MODULE_DESCRIPTION("Simple STM32 USB Bulk Driver");
+MODULE_DESCRIPTION("STM32 USB Bulk Driver");

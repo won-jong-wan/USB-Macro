@@ -3,22 +3,23 @@ MOD := usb_macro
 
 obj-m := $(MOD).o
 
-ARCH ?= arm
-CROSS_COMPILE ?= arm-linux-gnueabihf-
-CC := $(CROSS_COMPILE)gcc
-
-KDIR := /home/ubuntu/pi_bsp/kernel/linux
+# Build against the *running kernel* (fixes vermagic mismatch / invalid module format)
+KDIR ?= /lib/modules/$(shell uname -r)/build
 PWD  := $(shell pwd)
+
+# User-space app compiler (native on target Ubuntu)
+CC ?= gcc
+CFLAGS_APP ?= -O2 -Wall -Wextra
 
 .PHONY: all modules app clean
 
 all: app modules
 
 modules:
-	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 app: $(APP).c
-	$(CC) -O2 -Wall -o $(APP) $(APP).c
+	$(CC) $(CFLAGS_APP) -o $(APP) $(APP).c
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
