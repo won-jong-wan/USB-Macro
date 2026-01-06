@@ -28,7 +28,9 @@
 - 네트워크 끊기면… 끝 (현장 멘붕)
 
 ### After ☕ 
-[작동 영상](https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA)
+[![작동 영상](https://img.youtube.com/vi/8KH_-n1Bi2A/hqdefault.jpg)]
+(https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA)
+
 - PC에서 버튼 클릭(명령어 적재)
 - **Black Pill을 로봇에 꽂기**
 - (트리거 한 번) **자동 실행**
@@ -150,6 +152,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
