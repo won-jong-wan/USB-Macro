@@ -161,13 +161,6 @@ USB-MACRO/
 - 명령 생성 및 패킷 적재 (STORE)
 - GUI 기반 커맨드 작성
 
-[STM32(black pill)](https://github.com/won-jong-wan/USB-Macro/tree/README-dev)
----
-
-### 🖥️ PC (Qt Application)
-- 명령 생성 및 패킷 적재 (STORE)
-- GUI 기반 커맨드 작성
-
 [Qt Application (PC)](https://github.com/won-jong-wan/USB-Macro/tree/main/usb_macro_writerQt)
 
 ---
@@ -197,6 +190,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
