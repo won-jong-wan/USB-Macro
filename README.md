@@ -117,6 +117,8 @@ sudo ./install_services.sh
 cd ../usb_macro_kernel
 make
 mv usb_macro.ko ../daemon
+cd ../daemon
+sudo ./install_services.sh
 ```
 
 ### 3) 펌웨어 업로드
@@ -186,6 +188,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
