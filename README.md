@@ -87,6 +87,7 @@
 - Dongle: 수신한 패킷을 SD에 저장
 - Robot: 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
 
+---
 
 <img width="2592" height="316" alt="image" src="https://github.com/user-attachments/assets/36be97b2-150e-45ed-81db-9d8bc961556f" />
 
@@ -188,6 +189,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
