@@ -80,20 +80,18 @@
 
 ## 2가지 모드
 
+<img width="2890" height="815" alt="image" src="https://github.com/user-attachments/assets/2170902d-aa80-486e-83f7-61e9843547cd" />
 ### ✅ MAIN: 자동 실행 (Vendor 256Byte)
 - PC: 256Byte 패킷 write
 - Dongle: 수신한 패킷을 SD에 저장
 - Robot: 256Byte 패킷 read → daemon이 S/D/C로 파싱/실행
 
-<img width="2890" height="815" alt="image" src="https://github.com/user-attachments/assets/2170902d-aa80-486e-83f7-61e9843547cd" />
 
-
+<img width="2592" height="316" alt="image" src="https://github.com/user-attachments/assets/36be97b2-150e-45ed-81db-9d8bc961556f" />
 ### 🆘 EMERGENCY: 네트워크 죽어도 복구 (CDC↔UART Serial Console)
 - Black Pill이 **CDC 모드**로 전환
 - PC는 **가상 COM 포트**로 접속
 - CDC 데이터가 UART로 브릿지되어 RPi의 **agetty 시리얼 콘솔**로 연결
-
-<img width="2592" height="316" alt="image" src="https://github.com/user-attachments/assets/36be97b2-150e-45ed-81db-9d8bc961556f" />
 
 
 ---
@@ -188,6 +186,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
