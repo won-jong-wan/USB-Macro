@@ -98,7 +98,7 @@
 
 ---
 
-## Quick Start (요약)
+## Quick Start 
 
 
 ### 1) 펌웨어 업로드
@@ -108,7 +108,7 @@ make
 # ST-Link/DFU 등으로 flash
 ```
 
-### 2) 커널 드라이버 로드 (PC / RPi)
+### 2) PC Qt Application (Command STORE)
 ```bash
 cd kernel_driver
 make
@@ -116,7 +116,7 @@ sudo insmod custom_usb.ko
 ls -l /dev/custom_usb*
 ```
 
-### 3) PC에서 패킷 적재 (STORE)
+### 3) Daemon Deployment
 ```bash
 cd pc_client_qt
 ./CUSTOM_USB_CLIENT
@@ -130,7 +130,7 @@ python3 main.py
 # 저장된 패킷이 들어오면 daemon이 실행
 ```
 
-### 5) Recovery (Serial Console)
+### 5) Recovery (Optional)
 ```bash
 # 예: Linux
 sudo minicom -D /dev/ttyACM0 -b 115200
@@ -163,6 +163,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
