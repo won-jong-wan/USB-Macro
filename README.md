@@ -109,15 +109,21 @@ sudo ./USBMacroCommandStudio-x86_64.AppImage
 
 ### 2) Daemon Deployment
 ```bash
-cd pc_client_qt
-./CUSTOM_USB_CLIENT
-# Qt에서 명령 생성 → /dev/custom_usb_pc로 256Byte 전송
+git clone git@github.com:won-jong-wan/USB-Macro.git
+cd USB-Macro/daemon/
+sudo ./install_services.sh
+
+# 만약 .ko 파일이 호환되지 않는 경우
+cd ../usb_macro_kernel
+make
+mv usb_macro.ko ../daemon
 ```
 
 ### 3) 펌웨어 업로드
-usb_device/STM32F411CEU6_USB_Macro
-STM32CubeIDE 이용하여 업로드
-
+```bash
+cd usb_device/STM32F411CEU6_USB_Macro
+# STM32CubeIDE 이용하여 업로드
+```
 ---
 
 ## 레포 구조 (예시)
@@ -180,6 +186,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
