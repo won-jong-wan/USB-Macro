@@ -19,28 +19,33 @@
 
 ---
 
-## Before / After
+## 🔄 Before / After
 
-### Before 😵
+### ❌ Before (현장 지옥)
 - 로봇 AP/망 붙이기  
 - SSH 접속 → ROS 환경 export  
 - 터미널 여러 개 켜서 bringup / 센서 / 노드 실행  
 - 네트워크 끊기면… 끝 (현장 멘붕)
 
-### After ☕ 
+### ✅ After (Plug & Run ☕)
+- PC에서 버튼 클릭 (명령 적재)
+- **Black Pill을 로봇에 꽂기**
+- (트리거 1회) **자동 실행**
+- 네트워크 죽어도 **시리얼 콘솔로 복구 가능**
 
-## 🎬 Demo Video
+
+<details>
+<summary><b>🎬 Demo Video (클릭하여 보기)</b></summary>
 
 <p align="center">
   <a href="https://youtu.be/8KH_-n1Bi2A?si=F_2Mj6nK8ccp6BNA">
-    <img src="https://img.youtube.com/vi/8KH_-n1Bi2A/hqdefault.jpg" width="720">
+    <img src="https://img.youtube.com/vi/8KH_-n1Bi2A/hqdefault.jpg" width="420">
   </a>
 </p>
 
-- PC에서 버튼 클릭(명령어 적재)
-- **Black Pill을 로봇에 꽂기**
-- (트리거 한 번) **자동 실행**
-- 네트워크가 죽어도 **시리얼 콘솔로 복구**
+</details>
+
+
 ---
 ## H/W BOM
 <p align="center">
@@ -158,6 +163,7 @@ USB-MACRO/
 
 ## License
 MIT
+
 
 
 
